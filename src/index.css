@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+/* Opcional: Para que la barra de scroll (scrollbars) se vea más moderna y limpia */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
