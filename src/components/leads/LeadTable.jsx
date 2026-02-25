@@ -1,6 +1,9 @@
 import React, { useState, useRef } from "react";
 
-// --- SUB-COMPONENTES ---
+// ... (ElegantDatePicker, AccordionSelect, CheckboxItem se mantienen IGUAL que antes) ...
+// (Para ahorrar espacio, asegúrate de mantener los sub-componentes que te pasé en la respuesta anterior)
+
+// COPIA Y PEGA LOS SUBCOMPONENTES AQUÍ (ElegantDatePicker, AccordionSelect, CheckboxItem)
 const ElegantDatePicker = ({
   value,
   onChange,
@@ -8,7 +11,6 @@ const ElegantDatePicker = ({
   colorClass = "sky",
 }) => {
   const inputRef = useRef(null);
-
   const handleContainerClick = () => {
     if (inputRef.current) {
       if (inputRef.current.showPicker) inputRef.current.showPicker();
@@ -18,7 +20,6 @@ const ElegantDatePicker = ({
       }
     }
   };
-
   const displayDate = () => {
     if (!value) return "---";
     const d = new Date(value);
@@ -32,15 +33,10 @@ const ElegantDatePicker = ({
         })
       : d.toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
   };
-
   return (
     <div
       onClick={handleContainerClick}
-      className={`relative flex items-center justify-center px-2 py-1 rounded-lg border text-[9px] font-black uppercase transition-all cursor-pointer select-none ${
-        colorClass === "sky"
-          ? "bg-sky-50 text-sky-600 border-sky-100 hover:border-sky-300"
-          : "bg-indigo-50 text-indigo-600 border-indigo-100 hover:border-indigo-300"
-      }`}
+      className={`relative flex items-center justify-center px-2 py-1 rounded-lg border text-[9px] font-black uppercase transition-all cursor-pointer select-none ${colorClass === "sky" ? "bg-sky-50 text-sky-600 border-sky-100 hover:border-sky-300" : "bg-indigo-50 text-indigo-600 border-indigo-100 hover:border-indigo-300"}`}
     >
       {displayDate()}
       <input
@@ -54,7 +50,6 @@ const ElegantDatePicker = ({
     </div>
   );
 };
-
 const AccordionSelect = ({
   value,
   options,
@@ -93,7 +88,6 @@ const AccordionSelect = ({
     </div>
   </div>
 );
-
 const CheckboxItem = ({ checked, label, onChange }) => (
   <div
     onClick={() => onChange(!checked)}
@@ -132,7 +126,9 @@ export default function LeadTable({
   onEditLead,
   onFollowUp,
   onDeleteLead,
+  onViewComment,
 }) {
+  // Añadido prop onViewComment
   const [copiedId, setCopiedId] = useState(null);
   const [openDropdownId, setOpenDropdownId] = useState(null);
 
@@ -150,7 +146,6 @@ export default function LeadTable({
     >
       <div className="overflow-x-auto custom-scrollbar pb-24">
         <table className="min-w-full text-left">
-          {/* CABECERA CORREGIDA - TONOS SUAVES */}
           <thead className="bg-slate-50/50 border-b border-slate-100">
             <tr className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">
               <th className="px-4 py-4 text-left">Cliente</th>
@@ -162,11 +157,11 @@ export default function LeadTable({
               <th className="px-2 py-4">User</th>
               <th className="px-2 py-4">Asistencia</th>
               <th className="px-2 py-4">Regalo</th>
+              <th className="px-2 py-4">Obs.</th> {/* NUEVA COLUMNA */}
               <th className="px-2 py-4">Estatus</th>
               <th className="px-4 py-4">Acciones</th>
             </tr>
           </thead>
-
           <tbody className="divide-y divide-slate-100">
             {leads.map((lead) => {
               const asistencias = (lead.asistencia || []).filter(
@@ -220,7 +215,7 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* CONTACTO */}
+                  {/* CONTACTO (Igual) */}
                   <td className="px-4 py-3 space-y-1">
                     <div
                       className="flex items-center gap-1.5 group/copy cursor-pointer font-bold text-slate-700 text-[10px]"
@@ -411,7 +406,7 @@ export default function LeadTable({
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2.5}
-                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
                           />
                         </svg>
                       </button>
@@ -448,6 +443,35 @@ export default function LeadTable({
                       />
                     ) : (
                       <span className="text-slate-300 text-[10px]">---</span>
+                    )}
+                  </td>
+
+                  {/* OBSERVACIONES (NUEVA COLUMNA) */}
+                  <td className="px-2 py-3 text-center">
+                    {lead.comentarios ? (
+                      <button
+                        onClick={() =>
+                          onViewComment(lead.comentarios, lead.nombre)
+                        }
+                        title="Ver Observaciones"
+                        className="bg-indigo-50 text-indigo-600 p-2 rounded-xl hover:bg-indigo-100 transition-colors border border-indigo-100"
+                      >
+                        <svg
+                          className="w-3.5 h-3.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                          />
+                        </svg>
+                      </button>
+                    ) : (
+                      <span className="text-slate-200">-</span>
                     )}
                   </td>
 
@@ -501,7 +525,6 @@ export default function LeadTable({
                       <button
                         onClick={() => onEditLead(lead)}
                         className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-indigo-600 shadow-sm hover:shadow active:scale-95 transition-all"
-                        title="Editar Perfil"
                       >
                         <svg
                           className="w-4 h-4"
@@ -518,7 +541,6 @@ export default function LeadTable({
                       <button
                         onClick={() => onDeleteLead(lead.id)}
                         className="p-1.5 bg-white border border-slate-200 rounded-lg text-rose-300 hover:text-rose-600 shadow-sm hover:shadow active:scale-95 transition-all"
-                        title="Eliminar"
                       >
                         <svg
                           className="w-4 h-4"

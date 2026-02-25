@@ -16,6 +16,7 @@ export default function LeadFormModal({
     quienRefirio: "",
     fechaLlamada: "",
     inicioClase: "",
+    comentarios: "", // NUEVO CAMPO
   });
 
   const [suggestions, setSuggestions] = useState([]);
@@ -56,8 +57,8 @@ export default function LeadFormModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
-        <div className="bg-[#4F46E5] p-6 text-center text-white">
+      <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="bg-[#4F46E5] p-6 text-center text-white sticky top-0 z-10">
           <h2 className="text-[11px] font-black uppercase tracking-[0.2em]">
             {leadToEdit ? "Editar Perfil" : "Nuevo Registro CLM"}
           </h2>
@@ -140,7 +141,6 @@ export default function LeadFormModal({
             />
           </div>
 
-          {/* FECHAS (NUEVO EN EL MODAL) */}
           <div className="grid grid-cols-2 gap-3 p-3 bg-indigo-50/30 rounded-2xl border border-indigo-50">
             <div className="space-y-1">
               <label className="text-[8px] font-black text-indigo-400 uppercase tracking-widest ml-1">
@@ -219,7 +219,23 @@ export default function LeadFormModal({
             )}
           </div>
 
-          <div className="flex gap-3 pt-4">
+          {/* CAMPO DE COMENTARIOS */}
+          <div className="space-y-1">
+            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
+              Notas / Observaciones
+            </label>
+            <textarea
+              rows="3"
+              value={formData.comentarios}
+              onChange={(e) =>
+                setFormData({ ...formData, comentarios: e.target.value })
+              }
+              className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-[11px] font-medium text-slate-600 focus:bg-white focus:ring-2 focus:ring-indigo-100 outline-none resize-none"
+              placeholder="Escribe detalles importantes aquí..."
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4 sticky bottom-0 bg-white pb-2">
             <button
               type="button"
               onClick={onClose}
