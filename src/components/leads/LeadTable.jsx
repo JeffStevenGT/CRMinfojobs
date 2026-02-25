@@ -198,9 +198,8 @@ export default function LeadTable({
                   key={lead.id}
                   className={`transition-colors group border-l-4 ${rowColorClass} ${borderColor}`}
                 >
-                  {/* CLIENTE */}
+                  {/* CLIENTE - RESTAURADO A TU DISEÑO ORIGINAL */}
                   <td className="px-4 py-3 min-w-[200px] align-top">
-                    {/* AHORA MUESTRA FECHA Y HORA DE CREACIÓN */}
                     {lead.fechaCreacion && (
                       <div className="text-[6.5px] font-black text-slate-300 uppercase tracking-widest mb-1.5 flex items-center gap-1">
                         <svg
@@ -228,7 +227,7 @@ export default function LeadTable({
                       </div>
                     )}
 
-                    <div className="font-bold text-slate-800 text-[11px] flex items-center gap-1.5 flex-wrap">
+                    <div className="font-bold text-slate-800 text-[11px] flex items-center gap-1.5 flex-wrap uppercase">
                       <span>{lead.nombre}</span>
                       {isReferido && (
                         <span className="text-[7px] bg-indigo-500 text-white px-1.5 py-0.5 rounded font-black uppercase shadow-sm">
@@ -237,10 +236,9 @@ export default function LeadTable({
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1.5 mt-1 text-[7.5px] font-black uppercase">
-                      <span className="text-slate-500 bg-slate-200/50 px-1.5 py-0.5 rounded border border-slate-200">
-                        {lead.provincia}
-                      </span>
+                    <div className="flex items-center gap-1 mt-0.5 text-[8px] text-slate-500 font-bold uppercase tracking-wide">
+                      <span>{lead.provincia || "S/P"}</span>
+                      <span className="text-slate-400">•</span>
                       <AccordionSelect
                         compact={true}
                         value={lead.situacion || "Null"}
@@ -259,7 +257,7 @@ export default function LeadTable({
                         ]}
                         onChange={(v) => onUpdateLead(lead.id, "situacion", v)}
                         renderBadge={(v) => (
-                          <span className="text-slate-500 bg-slate-200/50 px-1.5 py-0.5 rounded border border-slate-200 cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors">
+                          <span className="cursor-pointer hover:text-indigo-600 transition-colors">
                             {v === "Desempleado" ? "NULL" : v}
                           </span>
                         )}
@@ -267,7 +265,7 @@ export default function LeadTable({
                     </div>
 
                     {isReferido && lead.quienRefirio && (
-                      <div className="text-[8px] text-indigo-600 italic font-medium mt-1.5 leading-tight">
+                      <div className="text-[8px] text-indigo-600 italic font-medium mt-1 leading-tight">
                         Recomendado por: {lead.quienRefirio}
                       </div>
                     )}
