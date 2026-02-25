@@ -200,6 +200,7 @@ export default function LeadTable({
                 >
                   {/* CLIENTE */}
                   <td className="px-4 py-3 min-w-[200px] align-top">
+                    {/* AHORA MUESTRA FECHA Y HORA DE CREACIÓN */}
                     {lead.fechaCreacion && (
                       <div className="text-[6.5px] font-black text-slate-300 uppercase tracking-widest mb-1.5 flex items-center gap-1">
                         <svg
@@ -218,6 +219,11 @@ export default function LeadTable({
                         {new Date(lead.fechaCreacion).toLocaleDateString(
                           "es-ES",
                           { day: "2-digit", month: "short", year: "numeric" },
+                        )}{" "}
+                        •{" "}
+                        {new Date(lead.fechaCreacion).toLocaleTimeString(
+                          "es-ES",
+                          { hour: "2-digit", minute: "2-digit" },
                         )}
                       </div>
                     )}
@@ -267,9 +273,8 @@ export default function LeadTable({
                     )}
                   </td>
 
-                  {/* CONTACTO - ICONOS UNIFICADOS (VISIBLES Y MISMO TAMAÑO) */}
+                  {/* CONTACTO */}
                   <td className="px-4 py-3 space-y-1.5 align-top">
-                    {/* Teléfono + Copiar + WhatsApp */}
                     <div className="flex items-center gap-2">
                       <div
                         className="flex items-center gap-1.5 group cursor-pointer font-bold text-slate-700 text-[10px]"
@@ -279,9 +284,8 @@ export default function LeadTable({
                         title="Copiar teléfono"
                       >
                         <span>+34{lead.whatsapp}</span>
-                        {/* ICONO COPIAR TELÉFONO */}
                         <svg
-                          className={`w-4 h-4 transition-transform hover:scale-110 active:scale-95 ${copiedId === lead.id + "tel" ? "text-emerald-500 drop-shadow-sm" : "text-slate-300 group-hover:text-slate-500"}`}
+                          className={`w-3.5 h-3.5 transition-transform hover:scale-110 active:scale-95 ${copiedId === lead.id + "tel" ? "text-emerald-500 drop-shadow-sm" : "text-slate-300 group-hover:text-slate-500"}`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -295,7 +299,6 @@ export default function LeadTable({
                         </svg>
                       </div>
 
-                      {/* ICONO WHATSAPP */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -313,7 +316,7 @@ export default function LeadTable({
                         }
                       >
                         <svg
-                          className="w-3 h-3"
+                          className="w-3.5 h-3.5"
                           viewBox="0 0 24 24"
                           fill="currentColor"
                         >
@@ -322,7 +325,6 @@ export default function LeadTable({
                       </button>
                     </div>
 
-                    {/* Email + Copiar */}
                     <div
                       className={`flex items-center gap-1.5 ${lead.email ? "group cursor-pointer" : ""}`}
                       onClick={() =>
@@ -335,10 +337,9 @@ export default function LeadTable({
                       >
                         {lead.email || "No especificado"}
                       </span>
-                      {/* ICONO COPIAR EMAIL */}
                       {lead.email && (
                         <svg
-                          className={`w-4 h-4 transition-transform hover:scale-110 active:scale-95 ${copiedId === lead.id + "mail" ? "text-emerald-500 drop-shadow-sm" : "text-slate-300 group-hover:text-slate-500"}`}
+                          className={`w-3.5 h-3.5 transition-transform hover:scale-110 active:scale-95 ${copiedId === lead.id + "mail" ? "text-emerald-500 drop-shadow-sm" : "text-slate-300 group-hover:text-slate-500"}`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
