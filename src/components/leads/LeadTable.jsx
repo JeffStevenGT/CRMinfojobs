@@ -22,9 +22,7 @@ const AccordionSelect = ({
         {renderBadge(value, isOpen)}
       </div>
       <div
-        className={`absolute z-50 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] w-full max-w-[120px] ${
-          isOpen ? "max-h-60 opacity-100 mt-1" : "max-h-0 opacity-0 mt-0"
-        }`}
+        className={`absolute z-50 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] w-full max-w-[120px] ${isOpen ? "max-h-60 opacity-100 mt-1" : "max-h-0 opacity-0 mt-0"}`}
       >
         <div className="flex flex-col gap-0.5 bg-gray-50/90 p-1 rounded-lg border border-gray-200/50 shadow-inner">
           {options.map((opt) => {
@@ -39,9 +37,7 @@ const AccordionSelect = ({
                     onToggle();
                   }
                 }}
-                className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all text-center w-full 
-                  ${value === opt.value ? "bg-indigo-50 text-indigo-600" : "text-gray-500 hover:bg-white"}
-                  ${isDisabled ? "opacity-30 cursor-not-allowed grayscale" : ""}`}
+                className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all text-center w-full ${value === opt.value ? "bg-indigo-50 text-indigo-600" : "text-gray-500 hover:bg-white"} ${isDisabled ? "opacity-30 cursor-not-allowed grayscale" : ""}`}
               >
                 {opt.label} {isDisabled && "🔒"}
               </button>
@@ -53,15 +49,65 @@ const AccordionSelect = ({
   );
 };
 
-// --- CHECKBOX (Miniatura con efecto line-through) ---
+// --- COMPONENTE DE CALENDARIO ELEGANTE ---
+const ElegantDatePicker = ({
+  value,
+  onChange,
+  type = "date",
+  colorClass = "sky",
+}) => {
+  // Formateador para mostrar algo bonito mientras no hay fecha
+  const displayValue = value
+    ? type === "date"
+      ? value
+      : value.replace("T", " ")
+    : "---";
+
+  const baseColors = {
+    sky: "bg-sky-50/50 text-sky-600 border-sky-100 hover:border-sky-300",
+    indigo:
+      "bg-indigo-50/50 text-indigo-600 border-indigo-100 hover:border-indigo-300",
+    red: "bg-red-50/50 text-red-500 border-red-100",
+  };
+
+  return (
+    <div
+      className={`relative flex items-center justify-center px-1.5 py-1 rounded-lg border transition-all cursor-pointer ${baseColors[colorClass]}`}
+    >
+      <span className="text-[8px] font-black uppercase tracking-tighter truncate max-w-[90px]">
+        {displayValue}
+      </span>
+      <svg
+        className="w-2.5 h-2.5 ml-1 opacity-40"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={3}
+          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+        />
+      </svg>
+      {/* El input real está encima pero es invisible */}
+      <input
+        type={type}
+        value={value || ""}
+        onChange={(e) => onChange(e.target.value)}
+        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+      />
+    </div>
+  );
+};
+
 const CheckboxItem = ({ checked, label, onChange }) => (
   <div
     onClick={() => onChange(!checked)}
     className="flex items-start gap-1 cursor-pointer group py-0.5"
   >
     <div
-      className={`mt-0.5 w-3 h-3 rounded-[3px] border flex-shrink-0 flex items-center justify-center transition-all 
-      ${checked ? "bg-emerald-500 border-emerald-500" : "bg-white border-gray-300 group-hover:border-indigo-400"}`}
+      className={`mt-0.5 w-3 h-3 rounded-[3px] border flex-shrink-0 flex items-center justify-center transition-all ${checked ? "bg-emerald-500 border-emerald-500" : "bg-white border-gray-300 group-hover:border-indigo-400"}`}
     >
       {checked && (
         <svg
@@ -144,12 +190,11 @@ export default function LeadTable({
               const canFollow = esInscrito && tieneDocs && tieneUser;
               const esAutonomo = lead.situacion === "Autonomo";
 
-              // Color de fila dinámico basado en Estatus/Faltas
               let colorFila = "hover:bg-gray-50/40";
               if (nFaltas >= 3 && esInscrito)
                 colorFila = "bg-red-50/30 border-l-2 border-l-red-500";
               else if (lead.status === "finalizado")
-                colorFila = "bg-emerald-50/30 border-l-2 border-l-emerald-500";
+                colorFila = "bg-emerald-50/30 border-l-2 border-l-emerald-400";
               else if (lead.status === "abandonado")
                 colorFila = "bg-amber-50/30 border-l-2 border-l-amber-500";
               else if (lead.status === "en curso")
@@ -160,15 +205,11 @@ export default function LeadTable({
                   key={lead.id}
                   className={`group transition-all duration-300 ${colorFila}`}
                 >
-                  {/* CLIENTE */}
                   <td className="px-3 py-2 align-top">
                     <div className="font-bold text-gray-800 text-[12px] flex items-center gap-1">
-                      {lead.nombre}
+                      {lead.nombre}{" "}
                       {lead.esReferido === "si" && (
-                        <span
-                          title={`Referidor: ${lead.idReferidor}`}
-                          className="px-1 py-0.2 bg-indigo-50 text-indigo-500 rounded text-[7px] font-black border border-indigo-100 uppercase"
-                        >
+                        <span className="px-1 py-0.2 bg-indigo-50 text-indigo-500 rounded text-[7px] font-black border border-indigo-100 uppercase">
                           Ref
                         </span>
                       )}
@@ -178,7 +219,6 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* CONTACTO */}
                   <td className="px-3 py-2 align-top">
                     <div className="flex flex-col gap-0.5">
                       <div
@@ -222,7 +262,6 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* ESTADO: Colores específicos solicitados */}
                   <td className="px-1 py-2 text-center">
                     <AccordionSelect
                       value={lead.estado}
@@ -239,11 +278,11 @@ export default function LeadTable({
                         const colorMap = {
                           Agendado: "text-sky-600 border-sky-100 bg-sky-50/50",
                           Interesado:
-                            "text-violet-600 border-violet-100 bg-violet-50/50", // LILA
+                            "text-violet-600 border-violet-100 bg-violet-50/50",
                           Inscrito:
-                            "text-emerald-600 border-emerald-100 bg-emerald-50/50", // ÚNICO VERDE
+                            "text-emerald-600 border-emerald-100 bg-emerald-50/50",
                           "No Interesado":
-                            "text-red-600 border-red-100 bg-red-50/50", // ÚNICO ROJO
+                            "text-red-500 border-red-100 bg-red-50/50",
                         };
                         return (
                           <span
@@ -258,14 +297,16 @@ export default function LeadTable({
 
                   <td className="px-1 py-2 text-center">
                     {lead.estado === "Agendado" ? (
-                      <input
-                        type="datetime-local"
-                        value={lead.fechaLlamada}
-                        onChange={(e) =>
-                          onUpdateLead(lead.id, "fechaLlamada", e.target.value)
-                        }
-                        className="text-[9px] font-bold text-blue-600 bg-white border border-blue-50 rounded-md p-0.5 outline-none"
-                      />
+                      <div className="flex justify-center">
+                        <ElegantDatePicker
+                          type="datetime-local"
+                          value={lead.fechaLlamada}
+                          onChange={(v) =>
+                            onUpdateLead(lead.id, "fechaLlamada", v)
+                          }
+                          colorClass="sky"
+                        />
+                      </div>
                     ) : lead.estado === "Interesado" || esInscrito ? (
                       <AccordionSelect
                         value={lead.horario}
@@ -290,13 +331,12 @@ export default function LeadTable({
                     )}
                   </td>
 
-                  {/* DOCS: Lógica dinámica trabajador/autónomo */}
                   <td className="px-1 py-2">
                     {lead.estado === "Interesado" || esInscrito ? (
                       <div className="bg-gray-50/50 p-1 rounded-lg border border-gray-100">
                         <CheckboxItem
                           checked={lead.doc1}
-                          label={esAutonomo ? "Recibo" : "Nómina"}
+                          label={esAutonomo ? "Auton." : "Nómina"}
                           onChange={(v) => onUpdateLead(lead.id, "doc1", v)}
                         />
                         <CheckboxItem
@@ -312,20 +352,21 @@ export default function LeadTable({
 
                   <td className="px-1 py-2 text-center">
                     {esInscrito ? (
-                      <input
-                        type="date"
-                        value={lead.inicioClase || ""}
-                        onChange={(e) =>
-                          onUpdateLead(lead.id, "inicioClase", e.target.value)
-                        }
-                        className={`text-[9px] font-bold p-0.5 rounded border outline-none ${!lead.inicioClase ? "border-red-100 text-red-500" : "border-blue-50 text-blue-500"}`}
-                      />
+                      <div className="flex justify-center">
+                        <ElegantDatePicker
+                          type="date"
+                          value={lead.inicioClase}
+                          onChange={(v) =>
+                            onUpdateLead(lead.id, "inicioClase", v)
+                          }
+                          colorClass={!lead.inicioClase ? "red" : "indigo"}
+                        />
+                      </div>
                     ) : (
                       <span className="text-gray-300">—</span>
                     )}
                   </td>
 
-                  {/* USER: Columna obligatoria restaurada */}
                   <td className="px-1 py-2 text-center">
                     {esInscrito ? (
                       <div className="flex justify-center">
@@ -354,7 +395,6 @@ export default function LeadTable({
                     )}
                   </td>
 
-                  {/* REGALO: Bloqueado por faltas */}
                   <td className="px-1 py-2 text-center">
                     {esInscrito ? (
                       nFaltas >= 3 ? (
@@ -385,7 +425,6 @@ export default function LeadTable({
                     )}
                   </td>
 
-                  {/* ESTATUS: Entre Regalo y Acciones / Bloqueado por USER */}
                   <td className="px-1 py-2 text-center">
                     {esInscrito ? (
                       <AccordionSelect

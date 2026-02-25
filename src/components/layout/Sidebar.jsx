@@ -6,10 +6,9 @@ export default function Sidebar({
   activeTab,
   setActiveTab,
 }) {
-  // Controla qué sección está desplegada (Directorio, Agenda o Reportes)
   const [openAccordion, setOpenAccordion] = useState("clientes");
 
-  // --- ICONOS ---
+  // --- ICONOS (Mantenidos) ---
   const MenuIcon = () => (
     <svg
       className="w-5 h-5"
@@ -87,12 +86,10 @@ export default function Sidebar({
   );
 
   const handleToggle = (section) => {
-    // Si el sidebar está cerrado, lo abrimos primero
     if (!isOpen) {
       setIsOpen(true);
       setOpenAccordion(section);
     } else {
-      // Si ya está abierto, colapsamos/expandimos el acordeón
       setOpenAccordion(openAccordion === section ? null : section);
     }
   };
@@ -101,12 +98,13 @@ export default function Sidebar({
     <aside
       className={`bg-[#4F46E5] text-white flex flex-col transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] z-20 relative shadow-xl ${isOpen ? "w-64" : "w-20"}`}
     >
-      {/* LOGO Y BOTÓN HAMBURGUESA */}
       <div className="h-16 flex items-center justify-between px-5 border-b border-white/10 flex-shrink-0">
         <div
           className={`overflow-hidden transition-all duration-500 ${isOpen ? "w-auto opacity-100" : "w-0 opacity-0"}`}
         >
-          <span className="text-lg font-bold tracking-widest">INFOJOBS</span>
+          <span className="text-lg font-bold tracking-widest uppercase">
+            Infojobs
+          </span>
         </div>
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -116,9 +114,8 @@ export default function Sidebar({
         </button>
       </div>
 
-      {/* MENÚ */}
       <nav className="flex-1 py-6 space-y-4 px-3 overflow-y-auto custom-scrollbar overflow-x-hidden">
-        {/* BLOQUE: DIRECTORIO */}
+        {/* DIRECTORIO */}
         <div>
           <button
             onClick={() => handleToggle("clientes")}
@@ -154,7 +151,7 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* BLOQUE: AGENDA */}
+        {/* AGENDA */}
         <div>
           <button
             onClick={() => handleToggle("agenda")}
@@ -189,7 +186,7 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* BLOQUE: REPORTES */}
+        {/* REPORTES */}
         <div>
           <button
             onClick={() => handleToggle("reportes")}
