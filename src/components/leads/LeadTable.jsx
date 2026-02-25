@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 
-// --- SUB-COMPONENTES DE DISEÑO ---
+// --- SUB-COMPONENTES ---
 const ElegantDatePicker = ({
   value,
   onChange,
@@ -126,7 +126,6 @@ const CheckboxItem = ({ checked, label, onChange }) => (
   </div>
 );
 
-// --- TABLA PRINCIPAL ---
 export default function LeadTable({
   leads,
   onUpdateLead,
@@ -151,6 +150,7 @@ export default function LeadTable({
     >
       <div className="overflow-x-auto custom-scrollbar pb-24">
         <table className="min-w-full text-left">
+          {/* CABECERA CORREGIDA - TONOS SUAVES */}
           <thead className="bg-slate-50/50 border-b border-slate-100">
             <tr className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">
               <th className="px-4 py-4 text-left">Cliente</th>
@@ -160,13 +160,14 @@ export default function LeadTable({
               <th className="px-2 py-4">Docs</th>
               <th className="px-2 py-4">Inicio</th>
               <th className="px-2 py-4">User</th>
-              <th className="px-2 py-4">Asistencia</th>{" "}
-              {/* Cambiado de 'Faltas' a 'Asistencia' */}
+              <th className="px-2 py-4">Asistencia</th>
+              <th className="px-2 py-4">Regalo</th>
               <th className="px-2 py-4">Estatus</th>
               <th className="px-4 py-4">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50">
+
+          <tbody className="divide-y divide-slate-100">
             {leads.map((lead) => {
               const asistencias = (lead.asistencia || []).filter(
                 (d) => d,
@@ -174,25 +175,45 @@ export default function LeadTable({
               const nFaltas = 20 - asistencias;
               const isReferido = lead.esReferido === "si";
 
+              // --- LÓGICA DE COLORES CONDICIONALES PARA LA FILA ---
+              let rowColorClass = "bg-white hover:bg-slate-50";
+              let borderColor = "border-l-transparent";
+
+              if (lead.estado === "Inscrito") {
+                if (lead.status === "no apto") {
+                  rowColorClass = "bg-rose-50 hover:bg-rose-100";
+                  borderColor = "border-l-rose-500";
+                } else if (lead.status === "finalizado") {
+                  rowColorClass = "bg-emerald-50 hover:bg-emerald-100";
+                  borderColor = "border-l-emerald-500";
+                } else if (lead.status === "en curso") {
+                  rowColorClass = "bg-blue-50 hover:bg-blue-100";
+                  borderColor = "border-l-blue-500";
+                } else if (lead.status === "abandonado") {
+                  rowColorClass = "bg-orange-50 hover:bg-orange-100";
+                  borderColor = "border-l-orange-500";
+                }
+              }
+
               return (
                 <tr
                   key={lead.id}
-                  className="hover:bg-slate-50/50 transition-colors group"
+                  className={`transition-colors group border-l-4 ${rowColorClass} ${borderColor}`}
                 >
                   {/* CLIENTE */}
                   <td className="px-4 py-3">
-                    <div className="font-bold text-slate-700 text-[11px] flex items-center gap-1.5">
+                    <div className="font-bold text-slate-800 text-[11px] flex items-center gap-1.5">
                       {lead.nombre}
                       {isReferido && (
-                        <span className="text-[7px] bg-indigo-500 text-white px-1 py-0.5 rounded font-black uppercase">
+                        <span className="text-[7px] bg-indigo-500 text-white px-1.5 py-0.5 rounded font-black uppercase shadow-sm">
                           Ref
                         </span>
                       )}
                     </div>
-                    <div className="text-[8px] text-slate-400 font-bold uppercase mt-0.5">
+                    <div className="text-[8px] text-slate-500 font-bold uppercase mt-0.5">
                       {lead.provincia} • {lead.situacion}
                       {isReferido && lead.quienRefirio && (
-                        <span className="text-indigo-500 block italic normal-case font-medium mt-0.5">
+                        <span className="text-indigo-600 block italic normal-case font-medium mt-0.5">
                           Rec. por: {lead.quienRefirio}
                         </span>
                       )}
@@ -202,12 +223,12 @@ export default function LeadTable({
                   {/* CONTACTO */}
                   <td className="px-4 py-3 space-y-1">
                     <div
-                      className="flex items-center gap-1.5 group/copy cursor-pointer font-bold text-slate-600 text-[10px]"
+                      className="flex items-center gap-1.5 group/copy cursor-pointer font-bold text-slate-700 text-[10px]"
                       onClick={() => handleCopy(lead.id, lead.whatsapp, "tel")}
                     >
                       <span>+34{lead.whatsapp}</span>
                       <svg
-                        className={`w-3 h-3 ${copiedId === lead.id + "tel" ? "text-emerald-500" : "opacity-0 group-hover/copy:opacity-100 text-slate-300"}`}
+                        className={`w-3 h-3 ${copiedId === lead.id + "tel" ? "text-emerald-500" : "opacity-0 group-hover/copy:opacity-100 text-slate-400"}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -220,14 +241,14 @@ export default function LeadTable({
                     </div>
                     {lead.email && (
                       <div
-                        className="flex items-center gap-1.5 group/copy cursor-pointer text-slate-400 text-[9px]"
+                        className="flex items-center gap-1.5 group/copy cursor-pointer text-slate-500 text-[9px]"
                         onClick={() => handleCopy(lead.id, lead.email, "mail")}
                       >
                         <span className="truncate max-w-[100px]">
                           {lead.email}
                         </span>
                         <svg
-                          className={`w-2.5 h-2.5 ${copiedId === lead.id + "mail" ? "text-emerald-500" : "opacity-0 group-hover/copy:opacity-100 text-slate-300"}`}
+                          className={`w-2.5 h-2.5 ${copiedId === lead.id + "mail" ? "text-emerald-500" : "opacity-0 group-hover/copy:opacity-100 text-slate-400"}`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -263,15 +284,15 @@ export default function LeadTable({
                       renderBadge={(v) => {
                         const c =
                           v === "Inscrito"
-                            ? "text-emerald-600 bg-emerald-50"
+                            ? "text-emerald-700 bg-emerald-100"
                             : v === "No Interesado"
-                              ? "text-red-500 bg-red-50"
+                              ? "text-red-600 bg-red-100"
                               : v === "Interesado"
-                                ? "text-violet-600 bg-violet-50"
-                                : "text-sky-600 bg-sky-50";
+                                ? "text-violet-700 bg-violet-100"
+                                : "text-sky-700 bg-sky-100";
                         return (
                           <span
-                            className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase ${c}`}
+                            className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase shadow-sm ${c}`}
                           >
                             {v === "No Interesado" ? "No" : v}
                           </span>
@@ -308,7 +329,7 @@ export default function LeadTable({
                         ]}
                         onChange={(v) => onUpdateLead(lead.id, "horario", v)}
                         renderBadge={(v) => (
-                          <span className="text-[8px] font-bold text-slate-400 border px-2 py-0.5 rounded-lg uppercase">
+                          <span className="text-[8px] font-bold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-lg uppercase shadow-sm">
                             {v || "S/T"}
                           </span>
                         )}
@@ -322,7 +343,7 @@ export default function LeadTable({
                   <td className="px-2 py-3">
                     {lead.estado === "Inscrito" ||
                     lead.estado === "Interesado" ? (
-                      <div className="bg-slate-50/50 p-1 rounded-xl border border-slate-100 flex flex-col gap-0.5">
+                      <div className="bg-white/60 p-1.5 rounded-xl border border-slate-200 flex flex-col gap-1 shadow-sm">
                         <CheckboxItem
                           checked={lead.doc1}
                           label={lead.situacion === "Autonomo" ? "REC" : "NOM"}
@@ -335,7 +356,7 @@ export default function LeadTable({
                         />
                       </div>
                     ) : (
-                      <div className="text-center text-slate-200">---</div>
+                      <div className="text-center text-slate-300">---</div>
                     )}
                   </td>
 
@@ -370,23 +391,18 @@ export default function LeadTable({
                     )}
                   </td>
 
-                  {/* ASISTENCIA (BOTÓN RESTAURADO Y MEJORADO) */}
+                  {/* ASISTENCIA */}
                   <td className="px-2 py-3 text-center">
                     {lead.estado === "Inscrito" ? (
                       <button
                         onClick={() => onFollowUp(lead)}
-                        title="Controlar Asistencia"
-                        className={`group flex items-center justify-center gap-1.5 mx-auto px-2 py-1 rounded-lg border transition-all active:scale-95 ${
-                          nFaltas >= 3
-                            ? "bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100"
-                            : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200"
-                        }`}
+                        className={`group flex items-center justify-center gap-1.5 mx-auto px-2 py-1.5 rounded-lg border shadow-sm transition-all active:scale-95 ${nFaltas >= 3 ? "bg-rose-500 border-rose-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-300"}`}
                       >
                         <span className="text-[10px] font-black">
                           {nFaltas}F
                         </span>
                         <svg
-                          className="w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity"
+                          className={`w-3 h-3 ${nFaltas >= 3 ? "opacity-100" : "opacity-50 group-hover:opacity-100"}`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -400,7 +416,38 @@ export default function LeadTable({
                         </svg>
                       </button>
                     ) : (
-                      <span className="text-slate-200 text-[10px]">---</span>
+                      <span className="text-slate-300 text-[10px]">---</span>
+                    )}
+                  </td>
+
+                  {/* REGALO */}
+                  <td className="px-2 py-3 text-center">
+                    {lead.estado === "Inscrito" ? (
+                      <AccordionSelect
+                        value={lead.regalo || "no"}
+                        isOpen={openDropdownId === lead.id + "reg"}
+                        onToggle={() =>
+                          setOpenDropdownId(
+                            openDropdownId === lead.id + "reg"
+                              ? null
+                              : lead.id + "reg",
+                          )
+                        }
+                        options={[
+                          { value: "si", label: "Entregado" },
+                          { value: "no", label: "Pendiente" },
+                        ]}
+                        onChange={(v) => onUpdateLead(lead.id, "regalo", v)}
+                        renderBadge={(v) => (
+                          <span
+                            className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 shadow-sm ${v === "si" ? "bg-purple-500 text-white border border-purple-600" : "bg-white text-slate-400 border border-slate-200"}`}
+                          >
+                            {v === "si" ? "🎁 SÍ" : "NO"}
+                          </span>
+                        )}
+                      />
+                    ) : (
+                      <span className="text-slate-300 text-[10px]">---</span>
                     )}
                   </td>
 
@@ -421,15 +468,29 @@ export default function LeadTable({
                           { value: "en curso", label: "Curso" },
                           { value: "finalizado", label: "Fin" },
                           { value: "abandonado", label: "Aband" },
+                          { value: "no apto", label: "No Apto" },
                         ]}
                         onChange={(v) => onUpdateLead(lead.id, "status", v)}
-                        renderBadge={(v) => (
-                          <span
-                            className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase ${v === "finalizado" ? "bg-emerald-50 text-emerald-600" : v === "abandonado" ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"}`}
-                          >
-                            {v}
-                          </span>
-                        )}
+                        renderBadge={(v) => {
+                          let badgeClass =
+                            "bg-blue-500 text-white border-blue-600";
+                          if (v === "finalizado")
+                            badgeClass =
+                              "bg-emerald-500 text-white border-emerald-600";
+                          if (v === "abandonado")
+                            badgeClass =
+                              "bg-orange-500 text-white border-orange-600";
+                          if (v === "no apto")
+                            badgeClass =
+                              "bg-rose-600 text-white border-rose-700 animate-pulse";
+                          return (
+                            <span
+                              className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase shadow-md border ${badgeClass}`}
+                            >
+                              {v}
+                            </span>
+                          );
+                        }}
                       />
                     )}
                   </td>
@@ -439,7 +500,7 @@ export default function LeadTable({
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => onEditLead(lead)}
-                        className="p-1.5 text-slate-300 hover:text-indigo-600 transition-colors"
+                        className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-indigo-600 shadow-sm hover:shadow active:scale-95 transition-all"
                         title="Editar Perfil"
                       >
                         <svg
@@ -456,7 +517,7 @@ export default function LeadTable({
                       </button>
                       <button
                         onClick={() => onDeleteLead(lead.id)}
-                        className="p-1.5 text-red-200 hover:text-red-500 transition-colors"
+                        className="p-1.5 bg-white border border-slate-200 rounded-lg text-rose-300 hover:text-rose-600 shadow-sm hover:shadow active:scale-95 transition-all"
                         title="Eliminar"
                       >
                         <svg

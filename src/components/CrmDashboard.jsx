@@ -33,6 +33,7 @@ export default function CrmDashboard() {
     type: "success",
   });
 
+  // CONEXIÓN EN TIEMPO REAL CON FIREBASE
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "leads"), (snapshot) => {
       setLeadsCLM(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
@@ -40,18 +41,19 @@ export default function CrmDashboard() {
     return () => unsubscribe();
   }, []);
 
+  // FUNCIÓN MAESTRA DE AVISOS (Reemplaza a los alert y console.log)
   const notify = (msg, type = "success") => {
     setToast({ show: true, message: msg, type });
     setTimeout(
       () => setToast({ show: false, message: "", type: "success" }),
-      3000,
+      3500,
     );
   };
 
   const handleUpdateLead = async (id, campo, valor) => {
     try {
       await updateDoc(doc(db, "leads", id), { [campo]: valor });
-      notify("Sincronizado con la nube");
+      notify("Sincronizado con la base de datos");
     } catch (e) {
       notify("Error de conexión", "error");
     }
@@ -62,7 +64,7 @@ export default function CrmDashboard() {
       if (data.id) {
         const { id, ...cleanData } = data;
         await updateDoc(doc(db, "leads", id), cleanData);
-        notify("Perfil actualizado");
+        notify("Perfil de cliente actualizado");
       } else {
         await addDoc(collection(db, "leads"), {
           ...data,
@@ -72,22 +74,28 @@ export default function CrmDashboard() {
           regalo: "no",
           tieneUsuarios: false,
           agendaStatus: "pendiente",
+          fechaLlamada: data.fechaLlamada || "",
+          inicioClase: data.inicioClase || "",
         });
-        notify("Nuevo lead registrado");
+        notify("Nuevo registro exitoso");
       }
       setIsModalOpen(false);
       setLeadToEdit(null);
     } catch (e) {
-      notify("Error al guardar", "error");
+      notify("Error al guardar registro", "error");
     }
   };
 
   const handleDelete = async (id) => {
-    try {
-      await deleteDoc(doc(db, "leads", id));
-      notify("Registro eliminado", "error");
-    } catch (e) {
-      notify("No se pudo eliminar", "error");
+    if (
+      window.confirm("¿Estás seguro de eliminar permanentemente este registro?")
+    ) {
+      try {
+        await deleteDoc(doc(db, "leads", id));
+        notify("Registro eliminado del sistema", "error");
+      } catch (e) {
+        notify("No se pudo eliminar", "error");
+      }
     }
   };
 
@@ -132,14 +140,15 @@ export default function CrmDashboard() {
         <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
 
         <div className="flex-1 overflow-auto p-8 custom-scrollbar">
+          {/* TAB: DIRECTORIO CLM */}
           {activeTab === "clientes-clm" && (
             <div className="max-w-[1600px] mx-auto space-y-6">
               <div className="flex justify-between items-end px-2">
                 <div>
-                  <h1 className="text-xl font-black text-gray-800 uppercase tracking-widest italic">
+                  <h1 className="text-xl font-black text-slate-800 uppercase tracking-widest italic">
                     CLM Turismo
                   </h1>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">
                     Directorio de Gestión de Leads
                   </p>
                 </div>
@@ -166,6 +175,7 @@ export default function CrmDashboard() {
             </div>
           )}
 
+          {/* TAB: AGENDA CLM */}
           {activeTab === "agenda-clm" && (
             <AgendaView
               leads={leadsCLM}
@@ -178,11 +188,12 @@ export default function CrmDashboard() {
             />
           )}
 
+          {/* TAB: REPORTES CLM */}
           {activeTab === "reportes-clm" && <ReportsView leads={leadsCLM} />}
         </div>
       </main>
 
-      {/* MODALES */}
+      {/* MODAL DE FORMULARIO */}
       {isModalOpen && (
         <LeadFormModal
           leads={leadsCLM}
@@ -194,16 +205,44 @@ export default function CrmDashboard() {
           leadToEdit={leadToEdit}
         />
       )}
+
+      {/* MODAL DE ASISTENCIA (CON TRIGGER DE "NO APTO") */}
       {isFollowUpOpen && (
         <FollowUpModal
           onClose={() => setIsFollowUpOpen(false)}
           onSave={async (u) => {
-            const f = 20 - (u.asistencia || []).filter((d) => d).length;
+            // 1. Calculamos las faltas en tiempo real
+            const faltasCalc =
+              20 - (u.asistencia || []).filter((d) => d).length;
+            let nuevoStatus = u.status || "en curso";
+
+            // 2. TRIGGER AUTOMÁTICO: Si tiene 3 o más faltas = NO APTO
+            if (
+              faltasCalc >= 3 &&
+              nuevoStatus !== "abandonado" &&
+              nuevoStatus !== "finalizado"
+            ) {
+              nuevoStatus = "no apto";
+            }
+            // 3. TRIGGER INVERSO: Si le quitas faltas y estaba no apto, vuelve a EN CURSO
+            else if (faltasCalc < 3 && nuevoStatus === "no apto") {
+              nuevoStatus = "en curso";
+            }
+
+            // 4. Guardamos todo en Firestore de golpe
             await updateDoc(doc(db, "leads", u.id), {
               ...u,
-              faltas: f.toString(),
+              faltas: faltasCalc.toString(),
+              status: nuevoStatus,
             });
-            notify("Asistencia actualizada");
+
+            // 5. Notificamos al usuario
+            if (faltasCalc >= 3) {
+              notify("⚠️ Lead marcado como NO APTO", "error");
+            } else {
+              notify("Asistencia guardada");
+            }
+
             setIsFollowUpOpen(false);
           }}
           lead={leadToFollow}
