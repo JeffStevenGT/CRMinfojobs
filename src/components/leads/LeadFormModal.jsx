@@ -11,12 +11,12 @@ export default function LeadFormModal({
     whatsapp: "",
     email: "",
     provincia: "",
-    situacion: "Desempleado",
+    situacion: "Null", // DEFAULT CORREGIDO
     esReferido: "no",
     quienRefirio: "",
     fechaLlamada: "",
     inicioClase: "",
-    comentarios: "", // NUEVO CAMPO
+    comentarios: "",
   });
 
   const [suggestions, setSuggestions] = useState([]);
@@ -126,9 +126,10 @@ export default function LeadFormModal({
             </div>
           </div>
 
+          {/* EMAIL OPCIONAL */}
           <div className="space-y-1">
             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
-              Email
+              Email (Opcional)
             </label>
             <input
               type="email"
@@ -171,6 +172,23 @@ export default function LeadFormModal({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
+            {/* SITUACIÓN CON "NULL" */}
+            <div className="space-y-1">
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                Situación
+              </label>
+              <select
+                value={formData.situacion}
+                onChange={(e) =>
+                  setFormData({ ...formData, situacion: e.target.value })
+                }
+                className="w-full px-4 py-2 bg-slate-50 border-none rounded-xl text-[11px] font-bold outline-none"
+              >
+                <option value="Null">Null</option>
+                <option value="Trabajador">Trabajador</option>
+                <option value="Autonomo">Autónomo</option>
+              </select>
+            </div>
             <div className="space-y-1">
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
                 ¿Referido?
@@ -186,40 +204,40 @@ export default function LeadFormModal({
                 <option value="si">Sí</option>
               </select>
             </div>
-            {formData.esReferido === "si" && (
-              <div className="space-y-1 relative">
-                <label className="text-[9px] font-black text-indigo-500 uppercase tracking-widest ml-1">
-                  Referente
-                </label>
-                <input
-                  required
-                  type="text"
-                  value={formData.quienRefirio}
-                  onChange={handleReferrerChange}
-                  className="w-full px-4 py-2 bg-indigo-50 border-none rounded-xl text-[11px] font-bold focus:ring-2 focus:ring-indigo-200 outline-none"
-                />
-                {suggestions.length > 0 && (
-                  <div className="absolute z-[110] left-0 right-0 mt-1 bg-white border border-slate-100 shadow-2xl rounded-xl overflow-hidden">
-                    {suggestions.map((n, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => {
-                          setFormData({ ...formData, quienRefirio: n });
-                          setSuggestions([]);
-                        }}
-                        className="w-full text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-indigo-50"
-                      >
-                        {n}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
-          {/* CAMPO DE COMENTARIOS */}
+          {formData.esReferido === "si" && (
+            <div className="space-y-1 relative">
+              <label className="text-[9px] font-black text-indigo-500 uppercase tracking-widest ml-1">
+                Referente
+              </label>
+              <input
+                required
+                type="text"
+                value={formData.quienRefirio}
+                onChange={handleReferrerChange}
+                className="w-full px-4 py-2 bg-indigo-50 border-none rounded-xl text-[11px] font-bold focus:ring-2 focus:ring-indigo-200 outline-none"
+              />
+              {suggestions.length > 0 && (
+                <div className="absolute z-[110] left-0 right-0 mt-1 bg-white border border-slate-100 shadow-2xl rounded-xl overflow-hidden">
+                  {suggestions.map((n, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        setFormData({ ...formData, quienRefirio: n });
+                        setSuggestions([]);
+                      }}
+                      className="w-full text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-indigo-50"
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="space-y-1">
             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
               Notas / Observaciones

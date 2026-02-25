@@ -1,9 +1,6 @@
 import React, { useState, useRef } from "react";
 
-// ... (ElegantDatePicker, AccordionSelect, CheckboxItem se mantienen IGUAL que antes) ...
-// (Para ahorrar espacio, asegúrate de mantener los sub-componentes que te pasé en la respuesta anterior)
-
-// COPIA Y PEGA LOS SUBCOMPONENTES AQUÍ (ElegantDatePicker, AccordionSelect, CheckboxItem)
+// --- SUB-COMPONENTES (Sin cambios de diseño) ---
 const ElegantDatePicker = ({
   value,
   onChange,
@@ -50,6 +47,7 @@ const ElegantDatePicker = ({
     </div>
   );
 };
+
 const AccordionSelect = ({
   value,
   options,
@@ -88,6 +86,7 @@ const AccordionSelect = ({
     </div>
   </div>
 );
+
 const CheckboxItem = ({ checked, label, onChange }) => (
   <div
     onClick={() => onChange(!checked)}
@@ -128,7 +127,6 @@ export default function LeadTable({
   onDeleteLead,
   onViewComment,
 }) {
-  // Añadido prop onViewComment
   const [copiedId, setCopiedId] = useState(null);
   const [openDropdownId, setOpenDropdownId] = useState(null);
 
@@ -157,7 +155,7 @@ export default function LeadTable({
               <th className="px-2 py-4">User</th>
               <th className="px-2 py-4">Asistencia</th>
               <th className="px-2 py-4">Regalo</th>
-              <th className="px-2 py-4">Obs.</th> {/* NUEVA COLUMNA */}
+              <th className="px-2 py-4">Obs.</th>
               <th className="px-2 py-4">Estatus</th>
               <th className="px-4 py-4">Acciones</th>
             </tr>
@@ -170,10 +168,9 @@ export default function LeadTable({
               const nFaltas = 20 - asistencias;
               const isReferido = lead.esReferido === "si";
 
-              // --- LÓGICA DE COLORES CONDICIONALES PARA LA FILA ---
+              // Colores condicionales
               let rowColorClass = "bg-white hover:bg-slate-50";
               let borderColor = "border-l-transparent";
-
               if (lead.estado === "Inscrito") {
                 if (lead.status === "no apto") {
                   rowColorClass = "bg-rose-50 hover:bg-rose-100";
@@ -195,7 +192,7 @@ export default function LeadTable({
                   key={lead.id}
                   className={`transition-colors group border-l-4 ${rowColorClass} ${borderColor}`}
                 >
-                  {/* CLIENTE */}
+                  {/* CLIENTE: CORRECCIÓN AQUÍ */}
                   <td className="px-4 py-3">
                     <div className="font-bold text-slate-800 text-[11px] flex items-center gap-1.5">
                       {lead.nombre}
@@ -205,17 +202,40 @@ export default function LeadTable({
                         </span>
                       )}
                     </div>
-                    <div className="text-[8px] text-slate-500 font-bold uppercase mt-0.5">
-                      {lead.provincia} • {lead.situacion}
-                      {isReferido && lead.quienRefirio && (
-                        <span className="text-indigo-600 block italic normal-case font-medium mt-0.5">
-                          Rec. por: {lead.quienRefirio}
-                        </span>
-                      )}
+                    <div className="text-[8px] text-slate-500 font-bold uppercase mt-0.5 flex items-center gap-1">
+                      <span>{lead.provincia} •</span>
+                      {/* LÓGICA DE VISUALIZACIÓN: Si es 'Desempleado' muestra 'Null' */}
+                      <AccordionSelect
+                        value={lead.situacion || "Null"}
+                        isOpen={openDropdownId === lead.id + "sit"}
+                        onToggle={() =>
+                          setOpenDropdownId(
+                            openDropdownId === lead.id + "sit"
+                              ? null
+                              : lead.id + "sit",
+                          )
+                        }
+                        options={[
+                          { value: "Null", label: "Null" },
+                          { value: "Trabajador", label: "Trabajador" },
+                          { value: "Autonomo", label: "Autonomo" },
+                        ]}
+                        onChange={(v) => onUpdateLead(lead.id, "situacion", v)}
+                        renderBadge={(v) => (
+                          <span className="cursor-pointer hover:text-indigo-600 transition-colors">
+                            {v === "Desempleado" ? "Null" : v}
+                          </span>
+                        )}
+                      />
                     </div>
+                    {isReferido && lead.quienRefirio && (
+                      <span className="text-[8px] text-indigo-600 block italic font-medium mt-0.5">
+                        Rec. por: {lead.quienRefirio}
+                      </span>
+                    )}
                   </td>
 
-                  {/* CONTACTO (Igual) */}
+                  {/* CONTACTO: NO ESPECIFICADO + SIN ICONO */}
                   <td className="px-4 py-3 space-y-1">
                     <div
                       className="flex items-center gap-1.5 group/copy cursor-pointer font-bold text-slate-700 text-[10px]"
@@ -234,14 +254,20 @@ export default function LeadTable({
                         />
                       </svg>
                     </div>
-                    {lead.email && (
-                      <div
-                        className="flex items-center gap-1.5 group/copy cursor-pointer text-slate-500 text-[9px]"
-                        onClick={() => handleCopy(lead.id, lead.email, "mail")}
+
+                    <div
+                      className={`flex items-center gap-1.5 ${lead.email ? "group/copy cursor-pointer" : ""}`}
+                      onClick={() =>
+                        lead.email && handleCopy(lead.id, lead.email, "mail")
+                      }
+                    >
+                      <span
+                        className={`text-[9px] truncate max-w-[100px] ${lead.email ? "text-slate-500" : "text-slate-300 italic tracking-tight"}`}
                       >
-                        <span className="truncate max-w-[100px]">
-                          {lead.email}
-                        </span>
+                        {lead.email || "No especificado"}
+                      </span>
+                      {/* ICONO SOLO SI HAY EMAIL */}
+                      {lead.email && (
                         <svg
                           className={`w-2.5 h-2.5 ${copiedId === lead.id + "mail" ? "text-emerald-500" : "opacity-0 group-hover/copy:opacity-100 text-slate-400"}`}
                           fill="none"
@@ -253,11 +279,11 @@ export default function LeadTable({
                             strokeWidth={3}
                           />
                         </svg>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </td>
 
-                  {/* ESTADO */}
+                  {/* RESTO DE COLUMNAS (Sin cambios) */}
                   <td className="px-2 py-3 text-center">
                     <AccordionSelect
                       value={lead.estado}
@@ -295,8 +321,6 @@ export default function LeadTable({
                       }}
                     />
                   </td>
-
-                  {/* TURNO/CITA */}
                   <td className="px-2 py-3 text-center">
                     {lead.estado === "Agendado" ? (
                       <ElegantDatePicker
@@ -333,8 +357,6 @@ export default function LeadTable({
                       "---"
                     )}
                   </td>
-
-                  {/* DOCS */}
                   <td className="px-2 py-3">
                     {lead.estado === "Inscrito" ||
                     lead.estado === "Interesado" ? (
@@ -354,8 +376,6 @@ export default function LeadTable({
                       <div className="text-center text-slate-300">---</div>
                     )}
                   </td>
-
-                  {/* INICIO */}
                   <td className="px-2 py-3 text-center">
                     {lead.estado === "Inscrito" ? (
                       <ElegantDatePicker
@@ -370,8 +390,6 @@ export default function LeadTable({
                       "---"
                     )}
                   </td>
-
-                  {/* USER */}
                   <td className="px-2 py-3 text-center">
                     {lead.estado === "Inscrito" && (
                       <div className="flex justify-center">
@@ -385,8 +403,6 @@ export default function LeadTable({
                       </div>
                     )}
                   </td>
-
-                  {/* ASISTENCIA */}
                   <td className="px-2 py-3 text-center">
                     {lead.estado === "Inscrito" ? (
                       <button
@@ -406,7 +422,7 @@ export default function LeadTable({
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2.5}
-                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
                           />
                         </svg>
                       </button>
@@ -414,8 +430,6 @@ export default function LeadTable({
                       <span className="text-slate-300 text-[10px]">---</span>
                     )}
                   </td>
-
-                  {/* REGALO */}
                   <td className="px-2 py-3 text-center">
                     {lead.estado === "Inscrito" ? (
                       <AccordionSelect
@@ -445,15 +459,12 @@ export default function LeadTable({
                       <span className="text-slate-300 text-[10px]">---</span>
                     )}
                   </td>
-
-                  {/* OBSERVACIONES (NUEVA COLUMNA) */}
                   <td className="px-2 py-3 text-center">
                     {lead.comentarios ? (
                       <button
                         onClick={() =>
                           onViewComment(lead.comentarios, lead.nombre)
                         }
-                        title="Ver Observaciones"
                         className="bg-indigo-50 text-indigo-600 p-2 rounded-xl hover:bg-indigo-100 transition-colors border border-indigo-100"
                       >
                         <svg
@@ -474,8 +485,6 @@ export default function LeadTable({
                       <span className="text-slate-200">-</span>
                     )}
                   </td>
-
-                  {/* ESTATUS */}
                   <td className="px-2 py-3 text-center">
                     {lead.estado === "Inscrito" && (
                       <AccordionSelect
@@ -518,8 +527,6 @@ export default function LeadTable({
                       />
                     )}
                   </td>
-
-                  {/* ACCIONES */}
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-2">
                       <button
