@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 
+// --- SUB-COMPONENTES ---
 const ElegantDatePicker = ({
   value,
   onChange,
@@ -54,19 +55,22 @@ const AccordionSelect = ({
   renderBadge,
   isOpen,
   onToggle,
+  compact,
 }) => (
-  <div className="relative flex flex-col items-center w-full min-w-[100px]">
+  <div
+    className={`relative flex flex-col ${compact ? "w-auto items-start" : "items-center w-full min-w-[100px]"}`}
+  >
     <div
       onClick={(e) => {
         e.stopPropagation();
         onToggle();
       }}
-      className="cursor-pointer transition-transform active:scale-95 w-full flex justify-center"
+      className={`cursor-pointer transition-transform active:scale-95 flex justify-center ${compact ? "" : "w-full"}`}
     >
       {renderBadge(value)}
     </div>
     <div
-      className={`absolute z-50 overflow-hidden transition-all duration-300 w-full max-w-[120px] top-full ${isOpen ? "max-h-60 opacity-100 mt-1" : "max-h-0 opacity-0"}`}
+      className={`absolute z-[60] overflow-hidden transition-all duration-300 ${compact ? "min-w-[100px] left-0" : "w-full max-w-[120px]"} top-full ${isOpen ? "max-h-60 opacity-100 mt-1" : "max-h-0 opacity-0"}`}
     >
       <div className="flex flex-col gap-0.5 bg-white p-1 rounded-xl border border-slate-200 shadow-xl">
         {options.map((opt) => (
@@ -183,6 +187,9 @@ export default function LeadTable({
                 } else if (lead.status === "abandonado") {
                   rowColorClass = "bg-orange-50 hover:bg-orange-100";
                   borderColor = "border-l-orange-500";
+                } else if (lead.status === "pendiente") {
+                  rowColorClass = "bg-slate-100 hover:bg-slate-200";
+                  borderColor = "border-l-slate-400";
                 }
               }
 
@@ -191,19 +198,24 @@ export default function LeadTable({
                   key={lead.id}
                   className={`transition-colors group border-l-4 ${rowColorClass} ${borderColor}`}
                 >
-                  {/* CLIENTE */}
-                  <td className="px-4 py-3">
-                    <div className="font-bold text-slate-800 text-[11px] flex items-center gap-1.5">
-                      {lead.nombre}
+                  {/* CLIENTE - RESTAURADO A SU GLORIA ORIGINAL SIN RECORTAR TEXTOS */}
+                  <td className="px-4 py-3 min-w-[200px]">
+                    <div className="font-bold text-slate-800 text-[11px] flex items-center gap-1.5 flex-wrap">
+                      <span>{lead.nombre}</span>
                       {isReferido && (
                         <span className="text-[7px] bg-indigo-500 text-white px-1.5 py-0.5 rounded font-black uppercase shadow-sm">
                           Ref
                         </span>
                       )}
                     </div>
-                    <div className="text-[8px] text-slate-500 font-bold uppercase mt-0.5 flex items-center gap-1">
-                      <span>{lead.provincia} •</span>
+
+                    <div className="flex items-center gap-1.5 mt-1 text-[7.5px] font-black uppercase">
+                      <span className="text-slate-500 bg-slate-200/50 px-1.5 py-0.5 rounded border border-slate-200">
+                        {lead.provincia}
+                      </span>
+
                       <AccordionSelect
+                        compact={true}
                         value={lead.situacion || "Null"}
                         isOpen={openDropdownId === lead.id + "sit"}
                         onToggle={() =>
@@ -220,16 +232,18 @@ export default function LeadTable({
                         ]}
                         onChange={(v) => onUpdateLead(lead.id, "situacion", v)}
                         renderBadge={(v) => (
-                          <span className="cursor-pointer hover:text-indigo-600 transition-colors">
-                            {v === "Desempleado" ? "Null" : v}
+                          <span className="text-slate-500 bg-slate-200/50 px-1.5 py-0.5 rounded border border-slate-200 cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors">
+                            {v === "Desempleado" ? "NULL" : v}
                           </span>
                         )}
                       />
                     </div>
+
+                    {/* RESTAURADO COMPLETAMENTE, SIN TRUNCATE */}
                     {isReferido && lead.quienRefirio && (
-                      <span className="text-[8px] text-indigo-600 block italic font-medium mt-0.5">
-                        Rec. por: {lead.quienRefirio}
-                      </span>
+                      <div className="text-[8px] text-indigo-600 italic font-medium mt-1.5 leading-tight">
+                        Recomendado por: {lead.quienRefirio}
+                      </div>
                     )}
                   </td>
 
@@ -317,11 +331,10 @@ export default function LeadTable({
                           );
                         }}
                       />
-
-                      {/* MINI-TERMÓMETRO DE INTERÉS */}
                       {(lead.estado === "Agendado" ||
                         lead.estado === "Interesado") && (
                         <AccordionSelect
+                          compact={true}
                           value={lead.temperatura || "Tibio"}
                           isOpen={openDropdownId === lead.id + "temp"}
                           onToggle={() =>
@@ -559,6 +572,7 @@ export default function LeadTable({
                         }
                         options={[
                           { value: "en curso", label: "Curso" },
+                          { value: "pendiente", label: "Pendiente" },
                           { value: "finalizado", label: "Fin" },
                           { value: "abandonado", label: "Aband" },
                           { value: "no apto", label: "No Apto" },
@@ -576,6 +590,9 @@ export default function LeadTable({
                           if (v === "no apto")
                             badgeClass =
                               "bg-rose-600 text-white border-rose-700 animate-pulse";
+                          if (v === "pendiente")
+                            badgeClass =
+                              "bg-slate-500 text-white border-slate-600";
                           return (
                             <span
                               className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase shadow-md border ${badgeClass}`}
