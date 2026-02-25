@@ -25,7 +25,13 @@ export default function CrmDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [leadToEdit, setLeadToEdit] = useState(null);
   const [leadToFollow, setLeadToFollow] = useState(null);
-  const [toast, setToast] = useState({ show: false, message: "" });
+
+  // SISTEMA DE NOTIFICACIÓN MINIMALISTA (TOAST)
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "leads"), (snapshot) => {
@@ -34,16 +40,20 @@ export default function CrmDashboard() {
     return () => unsubscribe();
   }, []);
 
-  const showToast = (m) => {
-    setToast({ show: true, message: m });
-    setTimeout(() => setToast({ show: false, message: "" }), 3000);
+  const notify = (msg, type = "success") => {
+    setToast({ show: true, message: msg, type });
+    setTimeout(
+      () => setToast({ show: false, message: "", type: "success" }),
+      3000,
+    );
   };
 
   const handleUpdateLead = async (id, campo, valor) => {
     try {
       await updateDoc(doc(db, "leads", id), { [campo]: valor });
+      notify("Sincronizado con la nube");
     } catch (e) {
-      showToast("Error al actualizar");
+      notify("Error de conexión", "error");
     }
   };
 
@@ -52,6 +62,7 @@ export default function CrmDashboard() {
       if (data.id) {
         const { id, ...cleanData } = data;
         await updateDoc(doc(db, "leads", id), cleanData);
+        notify("Perfil actualizado");
       } else {
         await addDoc(collection(db, "leads"), {
           ...data,
@@ -62,27 +73,54 @@ export default function CrmDashboard() {
           tieneUsuarios: false,
           agendaStatus: "pendiente",
         });
+        notify("Nuevo lead registrado");
       }
       setIsModalOpen(false);
       setLeadToEdit(null);
-      showToast("✓ Sincronizado");
     } catch (e) {
-      alert(e.message);
+      notify("Error al guardar", "error");
     }
   };
 
-  // Buscador inteligente: Nombre, WhatsApp o Referente
+  const handleDelete = async (id) => {
+    try {
+      await deleteDoc(doc(db, "leads", id));
+      notify("Registro eliminado", "error");
+    } catch (e) {
+      notify("No se pudo eliminar", "error");
+    }
+  };
+
+  // BUSCADOR INTELIGENTE (Nombre, WhatsApp o Referente)
   const filteredLeads = leadsCLM.filter((l) => {
-    const busqueda = searchTerm.toLowerCase();
+    const b = searchTerm.toLowerCase();
     return (
-      l.nombre?.toLowerCase().includes(busqueda) ||
+      l.nombre?.toLowerCase().includes(b) ||
       l.whatsapp?.includes(searchTerm) ||
-      l.quienRefirio?.toLowerCase().includes(busqueda)
+      l.quienRefirio?.toLowerCase().includes(b)
     );
   });
 
   return (
-    <div className="flex h-screen bg-[#FDFDFD] font-sans overflow-hidden">
+    <div className="flex h-screen bg-[#FDFDFD] font-sans overflow-hidden relative">
+      {/* COMPONENTE TOAST (PÍLDORA FLOTANTE) */}
+      {toast.show && (
+        <div className="fixed bottom-10 right-10 z-[300] animate-in slide-in-from-bottom-5 fade-in duration-300">
+          <div
+            className={`flex items-center gap-3 px-6 py-3 rounded-full shadow-2xl border backdrop-blur-xl ${
+              toast.type === "success"
+                ? "bg-emerald-500/90 border-emerald-400"
+                : "bg-rose-500/90 border-rose-400"
+            }`}
+          >
+            <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-white">
+              {toast.message}
+            </span>
+          </div>
+        </div>
+      )}
+
       <Sidebar
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
@@ -98,18 +136,18 @@ export default function CrmDashboard() {
             <div className="max-w-[1600px] mx-auto space-y-6">
               <div className="flex justify-between items-end px-2">
                 <div>
-                  <h1 className="text-lg font-black text-gray-800 uppercase tracking-widest italic">
+                  <h1 className="text-xl font-black text-gray-800 uppercase tracking-widest italic">
                     CLM Turismo
                   </h1>
                   <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">
-                    Directorio Operativo
+                    Directorio de Gestión de Leads
                   </p>
                 </div>
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  className="bg-[#4F46E5] text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:scale-105 active:scale-95 transition-all"
+                  className="bg-[#4F46E5] text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 active:scale-95 transition-all"
                 >
-                  + Registro
+                  + Nuevo Lead
                 </button>
               </div>
               <LeadTable
@@ -123,10 +161,7 @@ export default function CrmDashboard() {
                   setLeadToFollow(l);
                   setIsFollowUpOpen(true);
                 }}
-                onDeleteLead={(id) =>
-                  confirm("¿Eliminar?") && deleteDoc(doc(db, "leads", id))
-                }
-                onShowWarning={showToast}
+                onDeleteLead={handleDelete}
               />
             </div>
           )}
@@ -139,7 +174,7 @@ export default function CrmDashboard() {
                 setLeadToEdit(l);
                 setIsModalOpen(true);
               }}
-              titulo="Agenda CLM"
+              titulo="Agenda de Seguimiento CLM"
             />
           )}
 
@@ -147,6 +182,7 @@ export default function CrmDashboard() {
         </div>
       </main>
 
+      {/* MODALES */}
       {isModalOpen && (
         <LeadFormModal
           leads={leadsCLM}
@@ -167,6 +203,7 @@ export default function CrmDashboard() {
               ...u,
               faltas: f.toString(),
             });
+            notify("Asistencia actualizada");
             setIsFollowUpOpen(false);
           }}
           lead={leadToFollow}

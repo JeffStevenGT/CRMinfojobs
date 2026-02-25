@@ -1,6 +1,60 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 
 // --- SUB-COMPONENTES DE DISEÑO ---
+const ElegantDatePicker = ({
+  value,
+  onChange,
+  type = "date",
+  colorClass = "sky",
+}) => {
+  const inputRef = useRef(null);
+
+  const handleContainerClick = () => {
+    if (inputRef.current) {
+      if (inputRef.current.showPicker) inputRef.current.showPicker();
+      else {
+        inputRef.current.focus();
+        inputRef.current.click();
+      }
+    }
+  };
+
+  const displayDate = () => {
+    if (!value) return "---";
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return "---";
+    return type === "datetime-local"
+      ? d.toLocaleString("es-ES", {
+          day: "2-digit",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : d.toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
+  };
+
+  return (
+    <div
+      onClick={handleContainerClick}
+      className={`relative flex items-center justify-center px-2 py-1 rounded-lg border text-[9px] font-black uppercase transition-all cursor-pointer select-none ${
+        colorClass === "sky"
+          ? "bg-sky-50 text-sky-600 border-sky-100 hover:border-sky-300"
+          : "bg-indigo-50 text-indigo-600 border-indigo-100 hover:border-indigo-300"
+      }`}
+    >
+      {displayDate()}
+      <input
+        ref={inputRef}
+        type={type}
+        value={value || ""}
+        onChange={(e) => onChange(e.target.value)}
+        className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>
+  );
+};
+
 const AccordionSelect = ({
   value,
   options,
@@ -37,25 +91,6 @@ const AccordionSelect = ({
         ))}
       </div>
     </div>
-  </div>
-);
-
-const ElegantDatePicker = ({
-  value,
-  onChange,
-  type = "date",
-  colorClass = "sky",
-}) => (
-  <div
-    className={`relative flex items-center justify-center px-2 py-1 rounded-lg border text-[9px] font-black uppercase transition-all ${colorClass === "sky" ? "bg-sky-50 text-sky-600 border-sky-100 hover:border-sky-300" : "bg-indigo-50 text-indigo-600 border-indigo-100 hover:border-indigo-300"}`}
-  >
-    {value || "---"}
-    <input
-      type={type}
-      value={value || ""}
-      onChange={(e) => onChange(e.target.value)}
-      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-    />
   </div>
 );
 
@@ -98,7 +133,6 @@ export default function LeadTable({
   onEditLead,
   onFollowUp,
   onDeleteLead,
-  onShowWarning,
 }) {
   const [copiedId, setCopiedId] = useState(null);
   const [openDropdownId, setOpenDropdownId] = useState(null);
@@ -115,7 +149,7 @@ export default function LeadTable({
       className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden"
       onClick={() => setOpenDropdownId(null)}
     >
-      <div className="overflow-x-auto custom-scrollbar pb-20">
+      <div className="overflow-x-auto custom-scrollbar pb-24">
         <table className="min-w-full text-left">
           <thead className="bg-slate-50/50 border-b border-slate-100">
             <tr className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">
@@ -126,7 +160,8 @@ export default function LeadTable({
               <th className="px-2 py-4">Docs</th>
               <th className="px-2 py-4">Inicio</th>
               <th className="px-2 py-4">User</th>
-              <th className="px-2 py-4">Faltas</th>
+              <th className="px-2 py-4">Asistencia</th>{" "}
+              {/* Cambiado de 'Faltas' a 'Asistencia' */}
               <th className="px-2 py-4">Estatus</th>
               <th className="px-4 py-4">Acciones</th>
             </tr>
@@ -157,14 +192,14 @@ export default function LeadTable({
                     <div className="text-[8px] text-slate-400 font-bold uppercase mt-0.5">
                       {lead.provincia} • {lead.situacion}
                       {isReferido && lead.quienRefirio && (
-                        <span className="text-indigo-500 block italic normal-case font-medium mt-0.5 tracking-tight">
-                          Recomendado por: {lead.quienRefirio}
+                        <span className="text-indigo-500 block italic normal-case font-medium mt-0.5">
+                          Rec. por: {lead.quienRefirio}
                         </span>
                       )}
                     </div>
                   </td>
 
-                  {/* CONTACTO ACTUALIZADO */}
+                  {/* CONTACTO */}
                   <td className="px-4 py-3 space-y-1">
                     <div
                       className="flex items-center gap-1.5 group/copy cursor-pointer font-bold text-slate-600 text-[10px]"
@@ -185,10 +220,10 @@ export default function LeadTable({
                     </div>
                     {lead.email && (
                       <div
-                        className="flex items-center gap-1.5 group/copy cursor-pointer text-slate-400 text-[9px] font-medium"
+                        className="flex items-center gap-1.5 group/copy cursor-pointer text-slate-400 text-[9px]"
                         onClick={() => handleCopy(lead.id, lead.email, "mail")}
                       >
-                        <span className="truncate max-w-[120px]">
+                        <span className="truncate max-w-[100px]">
                           {lead.email}
                         </span>
                         <svg
@@ -245,15 +280,15 @@ export default function LeadTable({
                     />
                   </td>
 
-                  {/* TURNO / CITA */}
+                  {/* TURNO/CITA */}
                   <td className="px-2 py-3 text-center">
                     {lead.estado === "Agendado" ? (
                       <ElegantDatePicker
+                        type="datetime-local"
                         value={lead.fechaLlamada}
                         onChange={(v) =>
                           onUpdateLead(lead.id, "fechaLlamada", v)
                         }
-                        type="datetime-local"
                       />
                     ) : lead.estado === "Inscrito" ||
                       lead.estado === "Interesado" ? (
@@ -283,54 +318,50 @@ export default function LeadTable({
                     )}
                   </td>
 
-                  {/* DOCS (Lógica de visibilidad corregida) */}
+                  {/* DOCS */}
                   <td className="px-2 py-3">
-                    {lead.estado === "Interesado" ||
-                    lead.estado === "Inscrito" ? (
+                    {lead.estado === "Inscrito" ||
+                    lead.estado === "Interesado" ? (
                       <div className="bg-slate-50/50 p-1 rounded-xl border border-slate-100 flex flex-col gap-0.5">
                         <CheckboxItem
                           checked={lead.doc1}
-                          label={
-                            lead.situacion === "Autonomo" ? "Recibo" : "Nómina"
-                          }
+                          label={lead.situacion === "Autonomo" ? "REC" : "NOM"}
                           onChange={(v) => onUpdateLead(lead.id, "doc1", v)}
                         />
                         <CheckboxItem
                           checked={lead.doc2}
-                          label={
-                            lead.situacion === "Autonomo" ? "IAE" : "Cont."
-                          }
+                          label={lead.situacion === "Autonomo" ? "IAE" : "CON"}
                           onChange={(v) => onUpdateLead(lead.id, "doc2", v)}
                         />
                       </div>
                     ) : (
-                      <div className="text-center text-slate-200 text-[10px]">
-                        ---
-                      </div>
+                      <div className="text-center text-slate-200">---</div>
                     )}
                   </td>
 
-                  {/* RESTO DE COLUMNAS */}
+                  {/* INICIO */}
                   <td className="px-2 py-3 text-center">
                     {lead.estado === "Inscrito" ? (
                       <ElegantDatePicker
+                        type="date"
+                        colorClass="indigo"
                         value={lead.inicioClase}
                         onChange={(v) =>
                           onUpdateLead(lead.id, "inicioClase", v)
                         }
-                        colorClass="indigo"
                       />
                     ) : (
                       "---"
                     )}
                   </td>
 
+                  {/* USER */}
                   <td className="px-2 py-3 text-center">
                     {lead.estado === "Inscrito" && (
                       <div className="flex justify-center">
                         <CheckboxItem
                           checked={lead.tieneUsuarios}
-                          label={lead.tieneUsuarios ? "OK" : "PEND"}
+                          label={lead.tieneUsuarios ? "OK" : "PND"}
                           onChange={(v) =>
                             onUpdateLead(lead.id, "tieneUsuarios", v)
                           }
@@ -339,14 +370,41 @@ export default function LeadTable({
                     )}
                   </td>
 
+                  {/* ASISTENCIA (BOTÓN RESTAURADO Y MEJORADO) */}
                   <td className="px-2 py-3 text-center">
-                    <span
-                      className={`text-[10px] font-black ${nFaltas >= 3 ? "text-red-500" : "text-slate-400"}`}
-                    >
-                      {nFaltas}F
-                    </span>
+                    {lead.estado === "Inscrito" ? (
+                      <button
+                        onClick={() => onFollowUp(lead)}
+                        title="Controlar Asistencia"
+                        className={`group flex items-center justify-center gap-1.5 mx-auto px-2 py-1 rounded-lg border transition-all active:scale-95 ${
+                          nFaltas >= 3
+                            ? "bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100"
+                            : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200"
+                        }`}
+                      >
+                        <span className="text-[10px] font-black">
+                          {nFaltas}F
+                        </span>
+                        <svg
+                          className="w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2.5}
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                          />
+                        </svg>
+                      </button>
+                    ) : (
+                      <span className="text-slate-200 text-[10px]">---</span>
+                    )}
                   </td>
 
+                  {/* ESTATUS */}
                   <td className="px-2 py-3 text-center">
                     {lead.estado === "Inscrito" && (
                       <AccordionSelect
@@ -360,9 +418,9 @@ export default function LeadTable({
                           )
                         }
                         options={[
-                          { value: "en curso", label: "En Curso" },
-                          { value: "finalizado", label: "Finalizado" },
-                          { value: "abandonado", label: "Abandonado" },
+                          { value: "en curso", label: "Curso" },
+                          { value: "finalizado", label: "Fin" },
+                          { value: "abandonado", label: "Aband" },
                         ]}
                         onChange={(v) => onUpdateLead(lead.id, "status", v)}
                         renderBadge={(v) => (
@@ -376,11 +434,13 @@ export default function LeadTable({
                     )}
                   </td>
 
+                  {/* ACCIONES */}
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => onEditLead(lead)}
                         className="p-1.5 text-slate-300 hover:text-indigo-600 transition-colors"
+                        title="Editar Perfil"
                       >
                         <svg
                           className="w-4 h-4"
@@ -397,6 +457,7 @@ export default function LeadTable({
                       <button
                         onClick={() => onDeleteLead(lead.id)}
                         className="p-1.5 text-red-200 hover:text-red-500 transition-colors"
+                        title="Eliminar"
                       >
                         <svg
                           className="w-4 h-4"
