@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-// --- SELECTORES (Compactados horizontalmente) ---
+// --- SELECTORES (Estilo SENATI - Ultra Compacto) ---
 const AccordionSelect = ({
   value,
   options,
@@ -53,7 +53,7 @@ const AccordionSelect = ({
   );
 };
 
-// --- CHECKBOX (Más pequeño) ---
+// --- CHECKBOX (Miniatura con efecto line-through) ---
 const CheckboxItem = ({ checked, label, onChange }) => (
   <div
     onClick={() => onChange(!checked)}
@@ -144,6 +144,7 @@ export default function LeadTable({
               const canFollow = esInscrito && tieneDocs && tieneUser;
               const esAutonomo = lead.situacion === "Autonomo";
 
+              // Color de fila dinámico basado en Estatus/Faltas
               let colorFila = "hover:bg-gray-50/40";
               if (nFaltas >= 3 && esInscrito)
                 colorFila = "bg-red-50/30 border-l-2 border-l-red-500";
@@ -159,12 +160,15 @@ export default function LeadTable({
                   key={lead.id}
                   className={`group transition-all duration-300 ${colorFila}`}
                 >
-                  {/* CLIENTE (Fuente reducida a 12px) */}
+                  {/* CLIENTE */}
                   <td className="px-3 py-2 align-top">
                     <div className="font-bold text-gray-800 text-[12px] flex items-center gap-1">
                       {lead.nombre}
                       {lead.esReferido === "si" && (
-                        <span className="px-1 py-0.2 bg-indigo-50 text-indigo-500 rounded text-[7px] font-black border border-indigo-100 uppercase">
+                        <span
+                          title={`Referidor: ${lead.idReferidor}`}
+                          className="px-1 py-0.2 bg-indigo-50 text-indigo-500 rounded text-[7px] font-black border border-indigo-100 uppercase"
+                        >
                           Ref
                         </span>
                       )}
@@ -174,7 +178,7 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* CONTACTO (Compactado) */}
+                  {/* CONTACTO */}
                   <td className="px-3 py-2 align-top">
                     <div className="flex flex-col gap-0.5">
                       <div
@@ -218,6 +222,7 @@ export default function LeadTable({
                     </div>
                   </td>
 
+                  {/* ESTADO: Colores específicos solicitados */}
                   <td className="px-1 py-2 text-center">
                     <AccordionSelect
                       value={lead.estado}
@@ -227,16 +232,27 @@ export default function LeadTable({
                         { value: "Agendado", label: "Agendado" },
                         { value: "Interesado", label: "Interesado" },
                         { value: "Inscrito", label: "Inscrito" },
-                        { value: "No Interesado", label: "No" },
+                        { value: "No Interesado", label: "No Interesado" },
                       ]}
                       onChange={(v) => onUpdateLead(lead.id, "estado", v)}
-                      renderBadge={(v) => (
-                        <span
-                          className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase border bg-white ${v === "Inscrito" ? "text-emerald-600 border-emerald-100" : "text-gray-500 border-gray-100"}`}
-                        >
-                          {v}
-                        </span>
-                      )}
+                      renderBadge={(v) => {
+                        const colorMap = {
+                          Agendado: "text-sky-600 border-sky-100 bg-sky-50/50",
+                          Interesado:
+                            "text-violet-600 border-violet-100 bg-violet-50/50", // LILA
+                          Inscrito:
+                            "text-emerald-600 border-emerald-100 bg-emerald-50/50", // ÚNICO VERDE
+                          "No Interesado":
+                            "text-red-600 border-red-100 bg-red-50/50", // ÚNICO ROJO
+                        };
+                        return (
+                          <span
+                            className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase border shadow-sm ${colorMap[v] || "text-gray-500 border-gray-100 bg-white"}`}
+                          >
+                            {v === "No Interesado" ? "No" : v}
+                          </span>
+                        );
+                      }}
                     />
                   </td>
 
@@ -274,12 +290,13 @@ export default function LeadTable({
                     )}
                   </td>
 
+                  {/* DOCS: Lógica dinámica trabajador/autónomo */}
                   <td className="px-1 py-2">
                     {lead.estado === "Interesado" || esInscrito ? (
                       <div className="bg-gray-50/50 p-1 rounded-lg border border-gray-100">
                         <CheckboxItem
                           checked={lead.doc1}
-                          label={esAutonomo ? "Auton." : "Nómina"}
+                          label={esAutonomo ? "Recibo" : "Nómina"}
                           onChange={(v) => onUpdateLead(lead.id, "doc1", v)}
                         />
                         <CheckboxItem
@@ -308,6 +325,7 @@ export default function LeadTable({
                     )}
                   </td>
 
+                  {/* USER: Columna obligatoria restaurada */}
                   <td className="px-1 py-2 text-center">
                     {esInscrito ? (
                       <div className="flex justify-center">
@@ -336,6 +354,7 @@ export default function LeadTable({
                     )}
                   </td>
 
+                  {/* REGALO: Bloqueado por faltas */}
                   <td className="px-1 py-2 text-center">
                     {esInscrito ? (
                       nFaltas >= 3 ? (
@@ -348,8 +367,8 @@ export default function LeadTable({
                           isOpen={openDropdownId === `${lead.id}-reg`}
                           onToggle={() => toggleDropdown(`${lead.id}-reg`)}
                           options={[
-                            { value: "no", label: "Pendiente" },
-                            { value: "si", label: "Entregado" },
+                            { value: "no", label: "No" },
+                            { value: "si", label: "Sí" },
                           ]}
                           onChange={(v) => onUpdateLead(lead.id, "regalo", v)}
                           renderBadge={(v) => (
@@ -366,6 +385,7 @@ export default function LeadTable({
                     )}
                   </td>
 
+                  {/* ESTATUS: Entre Regalo y Acciones / Bloqueado por USER */}
                   <td className="px-1 py-2 text-center">
                     {esInscrito ? (
                       <AccordionSelect
