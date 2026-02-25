@@ -281,7 +281,7 @@ export default function LeadTable({
                         <span>+34{lead.whatsapp}</span>
                         {/* ICONO COPIAR TELÉFONO */}
                         <svg
-                          className={`w-3.5 h-3.5 transition-transform hover:scale-110 active:scale-95 ${copiedId === lead.id + "tel" ? "text-emerald-500 drop-shadow-sm" : "text-slate-300 group-hover:text-slate-500"}`}
+                          className={`w-4 h-4 transition-transform hover:scale-110 active:scale-95 ${copiedId === lead.id + "tel" ? "text-emerald-500 drop-shadow-sm" : "text-slate-300 group-hover:text-slate-500"}`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -313,7 +313,7 @@ export default function LeadTable({
                         }
                       >
                         <svg
-                          className="w-3.5 h-3.5"
+                          className="w-3 h-3"
                           viewBox="0 0 24 24"
                           fill="currentColor"
                         >
@@ -338,7 +338,7 @@ export default function LeadTable({
                       {/* ICONO COPIAR EMAIL */}
                       {lead.email && (
                         <svg
-                          className={`w-3.5 h-3.5 transition-transform hover:scale-110 active:scale-95 ${copiedId === lead.id + "mail" ? "text-emerald-500 drop-shadow-sm" : "text-slate-300 group-hover:text-slate-500"}`}
+                          className={`w-4 h-4 transition-transform hover:scale-110 active:scale-95 ${copiedId === lead.id + "mail" ? "text-emerald-500 drop-shadow-sm" : "text-slate-300 group-hover:text-slate-500"}`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
