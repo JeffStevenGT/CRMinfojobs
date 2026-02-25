@@ -26,14 +26,11 @@ export default function CrmDashboard() {
   const [leadToEdit, setLeadToEdit] = useState(null);
   const [leadToFollow, setLeadToFollow] = useState(null);
 
-  // ESTADO DEL MODAL DE COMENTARIOS
   const [viewComment, setViewComment] = useState({
     open: false,
     text: "",
     client: "",
   });
-
-  // ESTADO DEL TOAST
   const [toast, setToast] = useState({
     show: false,
     message: "",
@@ -80,7 +77,9 @@ export default function CrmDashboard() {
           tieneUsuarios: false,
           agendaStatus: "pendiente",
           comentarios: data.comentarios || "",
-          temperatura: data.temperatura || "Tibio", // INYECCIÓN POR DEFECTO DEL TERMÓMETRO
+          temperatura: data.temperatura || "Tibio",
+          // SE AGREGA LA FECHA DE CREACIÓN AUTOMÁTICA AQUÍ
+          fechaCreacion: new Date().toISOString(),
         });
         notify("Nuevo lead registrado");
       }
@@ -102,18 +101,24 @@ export default function CrmDashboard() {
     }
   };
 
-  const filteredLeads = leadsCLM.filter((l) => {
-    const b = searchTerm.toLowerCase();
-    return (
-      l.nombre?.toLowerCase().includes(b) ||
-      l.whatsapp?.includes(searchTerm) ||
-      l.quienRefirio?.toLowerCase().includes(b)
-    );
-  });
+  // BUSCADOR INTELIGENTE + ORDENAMIENTO POR FECHA (MÁS RECIENTES PRIMERO)
+  const filteredLeads = leadsCLM
+    .filter((l) => {
+      const b = searchTerm.toLowerCase();
+      return (
+        l.nombre?.toLowerCase().includes(b) ||
+        l.whatsapp?.includes(searchTerm) ||
+        l.quienRefirio?.toLowerCase().includes(b)
+      );
+    })
+    .sort((a, b) => {
+      const dateA = a.fechaCreacion ? new Date(a.fechaCreacion).getTime() : 0;
+      const dateB = b.fechaCreacion ? new Date(b.fechaCreacion).getTime() : 0;
+      return dateB - dateA; // Orden descendente (Los nuevos arriba)
+    });
 
   return (
     <div className="flex h-screen bg-[#FDFDFD] font-sans overflow-hidden relative">
-      {/* TOAST MINIMALISTA */}
       {toast.show && (
         <div className="fixed bottom-10 right-10 z-[300] animate-in slide-in-from-bottom-5 fade-in duration-300">
           <div
@@ -190,7 +195,6 @@ export default function CrmDashboard() {
         </div>
       </main>
 
-      {/* MODALES */}
       {isModalOpen && (
         <LeadFormModal
           leads={leadsCLM}
@@ -227,7 +231,6 @@ export default function CrmDashboard() {
         />
       )}
 
-      {/* MODAL LECTURA DE COMENTARIOS */}
       {viewComment.open && (
         <div
           className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200"

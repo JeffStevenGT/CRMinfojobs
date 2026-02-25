@@ -198,8 +198,31 @@ export default function LeadTable({
                   key={lead.id}
                   className={`transition-colors group border-l-4 ${rowColorClass} ${borderColor}`}
                 >
-                  {/* CLIENTE - RESTAURADO A SU GLORIA ORIGINAL SIN RECORTAR TEXTOS */}
+                  {/* CLIENTE - AHORA CON FECHA DE CREACIÓN CONDICIONAL */}
                   <td className="px-4 py-3 min-w-[200px]">
+                    {/* FECHA DE REGISTRO (Mini Etiqueta Superior) SOLO SE MUESTRA SI TIENE FECHA */}
+                    {lead.fechaCreacion && (
+                      <div className="text-[6.5px] font-black text-slate-300 uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                        <svg
+                          className="w-2.5 h-2.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                        {new Date(lead.fechaCreacion).toLocaleDateString(
+                          "es-ES",
+                          { day: "2-digit", month: "short", year: "numeric" },
+                        )}
+                      </div>
+                    )}
+
                     <div className="font-bold text-slate-800 text-[11px] flex items-center gap-1.5 flex-wrap">
                       <span>{lead.nombre}</span>
                       {isReferido && (
@@ -239,7 +262,6 @@ export default function LeadTable({
                       />
                     </div>
 
-                    {/* RESTAURADO COMPLETAMENTE, SIN TRUNCATE */}
                     {isReferido && lead.quienRefirio && (
                       <div className="text-[8px] text-indigo-600 italic font-medium mt-1.5 leading-tight">
                         Recomendado por: {lead.quienRefirio}
