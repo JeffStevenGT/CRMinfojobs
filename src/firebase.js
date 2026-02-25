@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore"; // Para la base de datos
+import { getAuth } from "firebase/auth"; // Para el login
 
-// 🔥 NUEVA CONFIGURACIÓN para crm-mainjobs
 const firebaseConfig = {
   apiKey: "AIzaSyAEkeEvi43cuUNvFAXBconeiYC-8RZms4I",
   authDomain: "crm-mainjobs.firebaseapp.com",
@@ -11,15 +11,11 @@ const firebaseConfig = {
   appId: "1:873216383021:web:057b322656f2204ce4c0a4",
 };
 
-// Inicializar Firebase
-console.log("🚀 Iniciando Firebase con proyecto:", firebaseConfig.projectId);
+// Inicializamos la App
 const app = initializeApp(firebaseConfig);
 
-// Inicializar Firestore
-const db = getFirestore(app);
+// Exportamos las herramientas para usarlas en el CRM
+export const db = getFirestore(app);
+export const auth = getAuth(app);
 
-console.log("✅ Firebase conectado correctamente");
-console.log("📁 Proyecto:", firebaseConfig.projectId);
-console.log("🔑 API Key:", firebaseConfig.apiKey.substring(0, 10) + "...");
-
-export { db };
+export default app;

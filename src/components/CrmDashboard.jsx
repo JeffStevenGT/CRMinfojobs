@@ -3,6 +3,7 @@ import Sidebar from "./layout/Sidebar";
 import Header from "./layout/Header";
 import LeadTable from "./leads/LeadTable";
 import AgendaView from "./agenda/AgendaView";
+import ReportsView from "./reports/ReportsView";
 import LeadFormModal from "./leads/LeadFormModal";
 import FollowUpModal from "./leads/FollowUpModal";
 import { db } from "../firebase.js";
@@ -21,13 +22,11 @@ export default function CrmDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFollowUpOpen, setIsFollowUpOpen] = useState(false);
   const [leadsCLM, setLeadsCLM] = useState([]);
-  const [leadsEndesa, setLeadsEndesa] = useState([]); // ESCALABILIDAD: Estado para Endesa
   const [searchTerm, setSearchTerm] = useState("");
   const [leadToEdit, setLeadToEdit] = useState(null);
   const [leadToFollow, setLeadToFollow] = useState(null);
   const [toast, setToast] = useState({ show: false, message: "" });
 
-  // Escuchamos Leads de CLM (Colección principal actual)
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "leads"), (snapshot) => {
       setLeadsCLM(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
@@ -40,10 +39,19 @@ export default function CrmDashboard() {
     setTimeout(() => setToast({ show: false, message: "" }), 3000);
   };
 
+  const handleUpdateLead = async (id, campo, valor) => {
+    try {
+      await updateDoc(doc(db, "leads", id), { [campo]: valor });
+    } catch (e) {
+      showToast("Error al actualizar");
+    }
+  };
+
   const handleSaveLead = async (data) => {
     try {
       if (data.id) {
-        await updateDoc(doc(db, "leads", data.id), data);
+        const { id, ...cleanData } = data;
+        await updateDoc(doc(db, "leads", id), cleanData);
       } else {
         await addDoc(collection(db, "leads"), {
           ...data,
@@ -52,19 +60,26 @@ export default function CrmDashboard() {
           status: "en curso",
           regalo: "no",
           tieneUsuarios: false,
+          agendaStatus: "pendiente",
         });
       }
       setIsModalOpen(false);
       setLeadToEdit(null);
-      showToast("✓ Guardado");
+      showToast("✓ Sincronizado");
     } catch (e) {
       alert(e.message);
     }
   };
 
-  const filteredLeads = leadsCLM.filter((l) =>
-    l.nombre?.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  // Buscador inteligente: Nombre, WhatsApp o Referente
+  const filteredLeads = leadsCLM.filter((l) => {
+    const busqueda = searchTerm.toLowerCase();
+    return (
+      l.nombre?.toLowerCase().includes(busqueda) ||
+      l.whatsapp?.includes(searchTerm) ||
+      l.quienRefirio?.toLowerCase().includes(busqueda)
+    );
+  });
 
   return (
     <div className="flex h-screen bg-[#FDFDFD] font-sans overflow-hidden">
@@ -75,29 +90,31 @@ export default function CrmDashboard() {
         setActiveTab={setActiveTab}
       />
 
-      <main className="flex-1 flex flex-col min-w-0 bg-[#F8FAFC]">
+      <main className="flex-1 flex flex-col min-w-0 bg-[#F9FAFB]">
         <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
 
-        <div className="flex-1 overflow-auto p-6 custom-scrollbar">
-          {/* DIRECTORIO CLM */}
+        <div className="flex-1 overflow-auto p-8 custom-scrollbar">
           {activeTab === "clientes-clm" && (
-            <div className="max-w-[1600px] mx-auto space-y-4">
-              <div className="flex justify-between items-center px-2">
-                <h1 className="text-xs font-black uppercase tracking-[0.3em] text-gray-400">
-                  Directorio CLM Turismo
-                </h1>
+            <div className="max-w-[1600px] mx-auto space-y-6">
+              <div className="flex justify-between items-end px-2">
+                <div>
+                  <h1 className="text-lg font-black text-gray-800 uppercase tracking-widest italic">
+                    CLM Turismo
+                  </h1>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">
+                    Directorio Operativo
+                  </p>
+                </div>
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  className="bg-[#4F46E5] text-white px-5 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
+                  className="bg-[#4F46E5] text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:scale-105 active:scale-95 transition-all"
                 >
                   + Registro
                 </button>
               </div>
               <LeadTable
                 leads={filteredLeads}
-                onUpdateLead={(id, c, v) =>
-                  updateDoc(doc(db, "leads", id), { [c]: v })
-                }
+                onUpdateLead={handleUpdateLead}
                 onEditLead={(l) => {
                   setLeadToEdit(l);
                   setIsModalOpen(true);
@@ -114,31 +131,25 @@ export default function CrmDashboard() {
             </div>
           )}
 
-          {/* AGENDA CLM */}
           {activeTab === "agenda-clm" && (
             <AgendaView
               leads={leadsCLM}
+              onUpdateLead={handleUpdateLead}
               onEditLead={(l) => {
                 setLeadToEdit(l);
                 setIsModalOpen(true);
               }}
-              titulo="Agenda CLM Turismo"
+              titulo="Agenda CLM"
             />
           )}
 
-          {/* ESCALABILIDAD: VISTAS ENDESA (Vacias por ahora) */}
-          {activeTab.includes("endesa") && (
-            <div className="h-full flex items-center justify-center">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                Módulo ENDESA en desarrollo...
-              </p>
-            </div>
-          )}
+          {activeTab === "reportes-clm" && <ReportsView leads={leadsCLM} />}
         </div>
       </main>
 
       {isModalOpen && (
         <LeadFormModal
+          leads={leadsCLM}
           onClose={() => {
             setIsModalOpen(false);
             setLeadToEdit(null);
@@ -151,7 +162,11 @@ export default function CrmDashboard() {
         <FollowUpModal
           onClose={() => setIsFollowUpOpen(false)}
           onSave={async (u) => {
-            await updateDoc(doc(db, "leads", u.id), u);
+            const f = 20 - (u.asistencia || []).filter((d) => d).length;
+            await updateDoc(doc(db, "leads", u.id), {
+              ...u,
+              faltas: f.toString(),
+            });
             setIsFollowUpOpen(false);
           }}
           lead={leadToFollow}

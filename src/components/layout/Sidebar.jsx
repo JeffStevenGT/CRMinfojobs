@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { auth } from "../../firebase"; // Asegúrate de que la ruta sea correcta
 
 export default function Sidebar({
   isOpen,
@@ -8,7 +9,7 @@ export default function Sidebar({
 }) {
   const [openAccordion, setOpenAccordion] = useState("clientes");
 
-  // --- ICONOS (Mantenidos) ---
+  // --- ICONOS ---
   const MenuIcon = () => (
     <svg
       className="w-5 h-5"
@@ -24,6 +25,7 @@ export default function Sidebar({
       />
     </svg>
   );
+
   const UsersIcon = () => (
     <svg
       className="w-5 h-5 flex-shrink-0"
@@ -39,6 +41,7 @@ export default function Sidebar({
       />
     </svg>
   );
+
   const CalendarIcon = () => (
     <svg
       className="w-5 h-5 flex-shrink-0"
@@ -54,6 +57,7 @@ export default function Sidebar({
       />
     </svg>
   );
+
   const ChartIcon = () => (
     <svg
       className="w-5 h-5 flex-shrink-0"
@@ -69,6 +73,23 @@ export default function Sidebar({
       />
     </svg>
   );
+
+  const LogoutIcon = () => (
+    <svg
+      className="w-5 h-5 flex-shrink-0"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+      />
+    </svg>
+  );
+
   const ChevronIcon = ({ isExpanded }) => (
     <svg
       className={`w-3.5 h-3.5 ml-auto transition-transform duration-500 ${isExpanded ? "rotate-180" : ""}`}
@@ -94,10 +115,17 @@ export default function Sidebar({
     }
   };
 
+  const handleLogout = () => {
+    if (window.confirm("¿Estás seguro de que quieres cerrar sesión?")) {
+      auth.signOut();
+    }
+  };
+
   return (
     <aside
       className={`bg-[#4F46E5] text-white flex flex-col transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] z-20 relative shadow-xl ${isOpen ? "w-64" : "w-20"}`}
     >
+      {/* LOGO */}
       <div className="h-16 flex items-center justify-between px-5 border-b border-white/10 flex-shrink-0">
         <div
           className={`overflow-hidden transition-all duration-500 ${isOpen ? "w-auto opacity-100" : "w-0 opacity-0"}`}
@@ -114,8 +142,9 @@ export default function Sidebar({
         </button>
       </div>
 
+      {/* NAVEGACIÓN */}
       <nav className="flex-1 py-6 space-y-4 px-3 overflow-y-auto custom-scrollbar overflow-x-hidden">
-        {/* DIRECTORIO */}
+        {/* BLOQUE: DIRECTORIO */}
         <div>
           <button
             onClick={() => handleToggle("clientes")}
@@ -151,7 +180,7 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* AGENDA */}
+        {/* BLOQUE: AGENDA */}
         <div>
           <button
             onClick={() => handleToggle("agenda")}
@@ -186,7 +215,7 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* REPORTES */}
+        {/* BLOQUE: REPORTES */}
         <div>
           <button
             onClick={() => handleToggle("reportes")}
@@ -221,6 +250,23 @@ export default function Sidebar({
           </div>
         </div>
       </nav>
+
+      {/* BOTÓN CERRAR SESIÓN (AL FINAL) */}
+      <div className="p-3 border-t border-white/10 mt-auto">
+        <button
+          onClick={handleLogout}
+          className={`w-full flex items-center px-4 py-3 rounded-xl transition-all duration-300 group hover:bg-rose-500/20 text-indigo-100 hover:text-white`}
+        >
+          <div className="group-hover:rotate-12 transition-transform">
+            <LogoutIcon />
+          </div>
+          <span
+            className={`ml-3 text-sm font-medium transition-all duration-500 ${isOpen ? "opacity-100" : "opacity-0 hidden"}`}
+          >
+            Cerrar Sesión
+          </span>
+        </button>
+      </div>
     </aside>
   );
 }

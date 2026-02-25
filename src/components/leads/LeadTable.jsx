@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-// --- SELECTORES (Estilo SENATI - Ultra Compacto) ---
+// --- SUB-COMPONENTES DE DISEÑO ---
 const AccordionSelect = ({
   value,
   options,
@@ -8,106 +8,64 @@ const AccordionSelect = ({
   renderBadge,
   isOpen,
   onToggle,
-  disabledOptions = [],
-}) => {
-  return (
-    <div className="flex flex-col items-center w-full min-w-[110px]">
-      <div
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggle();
-        }}
-        className="cursor-pointer transition-transform active:scale-95 w-full flex justify-center"
-      >
-        {renderBadge(value, isOpen)}
-      </div>
-      <div
-        className={`absolute z-50 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] w-full max-w-[120px] ${isOpen ? "max-h-60 opacity-100 mt-1" : "max-h-0 opacity-0 mt-0"}`}
-      >
-        <div className="flex flex-col gap-0.5 bg-gray-50/90 p-1 rounded-lg border border-gray-200/50 shadow-inner">
-          {options.map((opt) => {
-            const isDisabled = disabledOptions.includes(opt.value);
-            return (
-              <button
-                key={opt.value}
-                disabled={isDisabled}
-                onClick={() => {
-                  if (!isDisabled) {
-                    onChange(opt.value);
-                    onToggle();
-                  }
-                }}
-                className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all text-center w-full ${value === opt.value ? "bg-indigo-50 text-indigo-600" : "text-gray-500 hover:bg-white"} ${isDisabled ? "opacity-30 cursor-not-allowed grayscale" : ""}`}
-              >
-                {opt.label} {isDisabled && "🔒"}
-              </button>
-            );
-          })}
-        </div>
+}) => (
+  <div className="relative flex flex-col items-center w-full min-w-[100px]">
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle();
+      }}
+      className="cursor-pointer transition-transform active:scale-95 w-full flex justify-center"
+    >
+      {renderBadge(value)}
+    </div>
+    <div
+      className={`absolute z-50 overflow-hidden transition-all duration-300 w-full max-w-[120px] top-full ${isOpen ? "max-h-60 opacity-100 mt-1" : "max-h-0 opacity-0"}`}
+    >
+      <div className="flex flex-col gap-0.5 bg-white p-1 rounded-xl border border-slate-200 shadow-xl">
+        {options.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => {
+              onChange(opt.value);
+              onToggle();
+            }}
+            className={`px-2 py-1.5 text-[9px] font-bold rounded-lg text-center w-full ${value === opt.value ? "bg-indigo-50 text-indigo-600" : "text-slate-500 hover:bg-slate-50"}`}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
     </div>
-  );
-};
+  </div>
+);
 
-// --- COMPONENTE DE CALENDARIO ELEGANTE ---
 const ElegantDatePicker = ({
   value,
   onChange,
   type = "date",
   colorClass = "sky",
-}) => {
-  // Formateador para mostrar algo bonito mientras no hay fecha
-  const displayValue = value
-    ? type === "date"
-      ? value
-      : value.replace("T", " ")
-    : "---";
-
-  const baseColors = {
-    sky: "bg-sky-50/50 text-sky-600 border-sky-100 hover:border-sky-300",
-    indigo:
-      "bg-indigo-50/50 text-indigo-600 border-indigo-100 hover:border-indigo-300",
-    red: "bg-red-50/50 text-red-500 border-red-100",
-  };
-
-  return (
-    <div
-      className={`relative flex items-center justify-center px-1.5 py-1 rounded-lg border transition-all cursor-pointer ${baseColors[colorClass]}`}
-    >
-      <span className="text-[8px] font-black uppercase tracking-tighter truncate max-w-[90px]">
-        {displayValue}
-      </span>
-      <svg
-        className="w-2.5 h-2.5 ml-1 opacity-40"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={3}
-          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-        />
-      </svg>
-      {/* El input real está encima pero es invisible */}
-      <input
-        type={type}
-        value={value || ""}
-        onChange={(e) => onChange(e.target.value)}
-        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-      />
-    </div>
-  );
-};
+}) => (
+  <div
+    className={`relative flex items-center justify-center px-2 py-1 rounded-lg border text-[9px] font-black uppercase transition-all ${colorClass === "sky" ? "bg-sky-50 text-sky-600 border-sky-100 hover:border-sky-300" : "bg-indigo-50 text-indigo-600 border-indigo-100 hover:border-indigo-300"}`}
+  >
+    {value || "---"}
+    <input
+      type={type}
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
+      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+    />
+  </div>
+);
 
 const CheckboxItem = ({ checked, label, onChange }) => (
   <div
     onClick={() => onChange(!checked)}
-    className="flex items-start gap-1 cursor-pointer group py-0.5"
+    className="flex items-center gap-1.5 cursor-pointer group py-0.5"
   >
     <div
-      className={`mt-0.5 w-3 h-3 rounded-[3px] border flex-shrink-0 flex items-center justify-center transition-all ${checked ? "bg-emerald-500 border-emerald-500" : "bg-white border-gray-300 group-hover:border-indigo-400"}`}
+      className={`w-3 h-3 rounded-[3px] border flex items-center justify-center transition-all ${checked ? "bg-emerald-500 border-emerald-500" : "bg-white border-slate-300 group-hover:border-indigo-400"}`}
     >
       {checked && (
         <svg
@@ -119,20 +77,21 @@ const CheckboxItem = ({ checked, label, onChange }) => (
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={4}
+            strokeWidth={5}
             d="M5 13l4 4L19 7"
           />
         </svg>
       )}
     </div>
     <span
-      className={`text-[9px] font-medium leading-none transition-all ${checked ? "text-emerald-700 opacity-60 line-through" : "text-gray-600"}`}
+      className={`text-[8px] font-bold uppercase ${checked ? "text-emerald-700 opacity-50 line-through" : "text-slate-500"}`}
     >
       {label}
     </span>
   </div>
 );
 
+// --- TABLA PRINCIPAL ---
 export default function LeadTable({
   leads,
   onUpdateLead,
@@ -144,149 +103,140 @@ export default function LeadTable({
   const [copiedId, setCopiedId] = useState(null);
   const [openDropdownId, setOpenDropdownId] = useState(null);
 
-  const handleCopy = (id, text) => {
-    if (!text) return;
-    const prefijo = id.endsWith("t") ? "+34" : "";
-    navigator.clipboard.writeText(prefijo + text.replace(/\s+/g, ""));
-    setCopiedId(id);
+  const handleCopy = (id, text, type) => {
+    const val = type === "tel" ? "+34" + text.replace(/\s+/g, "") : text;
+    navigator.clipboard.writeText(val);
+    setCopiedId(id + type);
     setTimeout(() => setCopiedId(null), 1500);
-  };
-
-  const toggleDropdown = (id) => {
-    setOpenDropdownId(openDropdownId === id ? null : id);
   };
 
   return (
     <div
-      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+      className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden"
       onClick={() => setOpenDropdownId(null)}
     >
-      <div className="overflow-x-auto min-h-[450px] pb-20 custom-scrollbar">
-        <table className="min-w-full text-xs text-left">
-          <thead className="bg-gray-50/50 text-gray-400 font-bold border-b border-gray-100 text-[8px] uppercase tracking-wider text-center">
-            <tr>
-              <th className="px-3 py-3 text-left">Cliente</th>
-              <th className="px-3 py-3 text-left">Contacto</th>
-              <th className="px-1 py-3">Estado</th>
-              <th className="px-1 py-3">Turno</th>
-              <th className="px-1 py-3">Docs</th>
-              <th className="px-1 py-3">Inicio</th>
-              <th className="px-1 py-3">User</th>
-              <th className="px-1 py-3">Faltas</th>
-              <th className="px-1 py-3">Regalo</th>
-              <th className="px-1 py-3">Estatus</th>
-              <th className="px-2 py-3">Acciones</th>
+      <div className="overflow-x-auto custom-scrollbar pb-20">
+        <table className="min-w-full text-left">
+          <thead className="bg-slate-50/50 border-b border-slate-100">
+            <tr className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">
+              <th className="px-4 py-4 text-left">Cliente</th>
+              <th className="px-4 py-4 text-left">Contacto</th>
+              <th className="px-2 py-4">Estado</th>
+              <th className="px-2 py-4">Turno/Cita</th>
+              <th className="px-2 py-4">Docs</th>
+              <th className="px-2 py-4">Inicio</th>
+              <th className="px-2 py-4">User</th>
+              <th className="px-2 py-4">Faltas</th>
+              <th className="px-2 py-4">Estatus</th>
+              <th className="px-4 py-4">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50 text-gray-600">
+          <tbody className="divide-y divide-slate-50">
             {leads.map((lead) => {
               const asistencias = (lead.asistencia || []).filter(
                 (d) => d,
               ).length;
               const nFaltas = 20 - asistencias;
-              const tieneDocs = lead.doc1 && lead.doc2;
-              const esInscrito = lead.estado === "Inscrito";
-              const tieneUser = lead.tieneUsuarios;
-              const canFollow = esInscrito && tieneDocs && tieneUser;
-              const esAutonomo = lead.situacion === "Autonomo";
-
-              let colorFila = "hover:bg-gray-50/40";
-              if (nFaltas >= 3 && esInscrito)
-                colorFila = "bg-red-50/30 border-l-2 border-l-red-500";
-              else if (lead.status === "finalizado")
-                colorFila = "bg-emerald-50/30 border-l-2 border-l-emerald-400";
-              else if (lead.status === "abandonado")
-                colorFila = "bg-amber-50/30 border-l-2 border-l-amber-500";
-              else if (lead.status === "en curso")
-                colorFila = "bg-blue-50/30 border-l-2 border-l-blue-500";
+              const isReferido = lead.esReferido === "si";
 
               return (
                 <tr
                   key={lead.id}
-                  className={`group transition-all duration-300 ${colorFila}`}
+                  className="hover:bg-slate-50/50 transition-colors group"
                 >
-                  <td className="px-3 py-2 align-top">
-                    <div className="font-bold text-gray-800 text-[12px] flex items-center gap-1">
-                      {lead.nombre}{" "}
-                      {lead.esReferido === "si" && (
-                        <span className="px-1 py-0.2 bg-indigo-50 text-indigo-500 rounded text-[7px] font-black border border-indigo-100 uppercase">
+                  {/* CLIENTE */}
+                  <td className="px-4 py-3">
+                    <div className="font-bold text-slate-700 text-[11px] flex items-center gap-1.5">
+                      {lead.nombre}
+                      {isReferido && (
+                        <span className="text-[7px] bg-indigo-500 text-white px-1 py-0.5 rounded font-black uppercase">
                           Ref
                         </span>
                       )}
                     </div>
-                    <div className="text-[8px] text-gray-400 font-bold uppercase tracking-tighter">
+                    <div className="text-[8px] text-slate-400 font-bold uppercase mt-0.5">
                       {lead.provincia} • {lead.situacion}
+                      {isReferido && lead.quienRefirio && (
+                        <span className="text-indigo-500 block italic normal-case font-medium mt-0.5 tracking-tight">
+                          Recomendado por: {lead.quienRefirio}
+                        </span>
+                      )}
                     </div>
                   </td>
 
-                  <td className="px-3 py-2 align-top">
-                    <div className="flex flex-col gap-0.5">
-                      <div
-                        className="font-bold flex items-center group/copy cursor-pointer text-[10px]"
-                        onClick={() => handleCopy(lead.id + "t", lead.whatsapp)}
+                  {/* CONTACTO ACTUALIZADO */}
+                  <td className="px-4 py-3 space-y-1">
+                    <div
+                      className="flex items-center gap-1.5 group/copy cursor-pointer font-bold text-slate-600 text-[10px]"
+                      onClick={() => handleCopy(lead.id, lead.whatsapp, "tel")}
+                    >
+                      <span>+34{lead.whatsapp}</span>
+                      <svg
+                        className={`w-3 h-3 ${copiedId === lead.id + "tel" ? "text-emerald-500" : "opacity-0 group-hover/copy:opacity-100 text-slate-300"}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        <span>
-                          {lead.whatsapp ? `+34${lead.whatsapp}` : "---"}
+                        <path
+                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                          strokeWidth={3}
+                        />
+                      </svg>
+                    </div>
+                    {lead.email && (
+                      <div
+                        className="flex items-center gap-1.5 group/copy cursor-pointer text-slate-400 text-[9px] font-medium"
+                        onClick={() => handleCopy(lead.id, lead.email, "mail")}
+                      >
+                        <span className="truncate max-w-[120px]">
+                          {lead.email}
                         </span>
                         <svg
-                          className={`ml-1 w-3 h-3 transition-all ${copiedId === lead.id + "t" ? "text-emerald-500" : "opacity-0 group-hover/copy:opacity-100 text-gray-300"}`}
+                          className={`w-2.5 h-2.5 ${copiedId === lead.id + "mail" ? "text-emerald-500" : "opacity-0 group-hover/copy:opacity-100 text-slate-300"}`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
                         >
                           <path
                             d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                            strokeWidth={2.5}
+                            strokeWidth={3}
                           />
                         </svg>
                       </div>
-                      <div
-                        className="text-[9px] text-gray-400 italic flex items-center group/copy-m cursor-pointer"
-                        onClick={() => handleCopy(lead.id + "m", lead.email)}
-                      >
-                        <span className="truncate max-w-[80px]">
-                          {lead.email || "---"}
-                        </span>
-                        <svg
-                          className={`ml-1 w-2.5 h-2.5 transition-all ${copiedId === lead.id + "m" ? "text-emerald-500" : "opacity-0 group-hover/copy-m:opacity-100 text-gray-300"}`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                            strokeWidth={2.5}
-                          />
-                        </svg>
-                      </div>
-                    </div>
+                    )}
                   </td>
 
-                  <td className="px-1 py-2 text-center">
+                  {/* ESTADO */}
+                  <td className="px-2 py-3 text-center">
                     <AccordionSelect
                       value={lead.estado}
-                      isOpen={openDropdownId === `${lead.id}-st`}
-                      onToggle={() => toggleDropdown(`${lead.id}-st`)}
+                      isOpen={openDropdownId === lead.id + "st"}
+                      onToggle={() =>
+                        setOpenDropdownId(
+                          openDropdownId === lead.id + "st"
+                            ? null
+                            : lead.id + "st",
+                        )
+                      }
                       options={[
                         { value: "Agendado", label: "Agendado" },
                         { value: "Interesado", label: "Interesado" },
                         { value: "Inscrito", label: "Inscrito" },
-                        { value: "No Interesado", label: "No Interesado" },
+                        { value: "No Interesado", label: "No" },
                       ]}
                       onChange={(v) => onUpdateLead(lead.id, "estado", v)}
                       renderBadge={(v) => {
-                        const colorMap = {
-                          Agendado: "text-sky-600 border-sky-100 bg-sky-50/50",
-                          Interesado:
-                            "text-violet-600 border-violet-100 bg-violet-50/50",
-                          Inscrito:
-                            "text-emerald-600 border-emerald-100 bg-emerald-50/50",
-                          "No Interesado":
-                            "text-red-500 border-red-100 bg-red-50/50",
-                        };
+                        const c =
+                          v === "Inscrito"
+                            ? "text-emerald-600 bg-emerald-50"
+                            : v === "No Interesado"
+                              ? "text-red-500 bg-red-50"
+                              : v === "Interesado"
+                                ? "text-violet-600 bg-violet-50"
+                                : "text-sky-600 bg-sky-50";
                         return (
                           <span
-                            className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase border shadow-sm ${colorMap[v] || "text-gray-500 border-gray-100 bg-white"}`}
+                            className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase ${c}`}
                           >
                             {v === "No Interesado" ? "No" : v}
                           </span>
@@ -295,80 +245,88 @@ export default function LeadTable({
                     />
                   </td>
 
-                  <td className="px-1 py-2 text-center">
+                  {/* TURNO / CITA */}
+                  <td className="px-2 py-3 text-center">
                     {lead.estado === "Agendado" ? (
-                      <div className="flex justify-center">
-                        <ElegantDatePicker
-                          type="datetime-local"
-                          value={lead.fechaLlamada}
-                          onChange={(v) =>
-                            onUpdateLead(lead.id, "fechaLlamada", v)
-                          }
-                          colorClass="sky"
-                        />
-                      </div>
-                    ) : lead.estado === "Interesado" || esInscrito ? (
+                      <ElegantDatePicker
+                        value={lead.fechaLlamada}
+                        onChange={(v) =>
+                          onUpdateLead(lead.id, "fechaLlamada", v)
+                        }
+                        type="datetime-local"
+                      />
+                    ) : lead.estado === "Inscrito" ||
+                      lead.estado === "Interesado" ? (
                       <AccordionSelect
                         value={lead.horario}
-                        isOpen={openDropdownId === `${lead.id}-hor`}
-                        onToggle={() => toggleDropdown(`${lead.id}-hor`)}
+                        isOpen={openDropdownId === lead.id + "hor"}
+                        onToggle={() =>
+                          setOpenDropdownId(
+                            openDropdownId === lead.id + "hor"
+                              ? null
+                              : lead.id + "hor",
+                          )
+                        }
                         options={[
-                          { value: "", label: "Ninguno" },
                           { value: "mañana", label: "Mañana" },
                           { value: "tarde", label: "Tarde" },
                         ]}
                         onChange={(v) => onUpdateLead(lead.id, "horario", v)}
                         renderBadge={(v) => (
-                          <span
-                            className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase border bg-white ${!v ? "text-gray-300 border-gray-50" : "text-indigo-500 border-indigo-50"}`}
-                          >
-                            {v ? v : "S/T"}
+                          <span className="text-[8px] font-bold text-slate-400 border px-2 py-0.5 rounded-lg uppercase">
+                            {v || "S/T"}
                           </span>
                         )}
                       />
                     ) : (
-                      <span className="text-gray-300">—</span>
+                      "---"
                     )}
                   </td>
 
-                  <td className="px-1 py-2">
-                    {lead.estado === "Interesado" || esInscrito ? (
-                      <div className="bg-gray-50/50 p-1 rounded-lg border border-gray-100">
+                  {/* DOCS (Lógica de visibilidad corregida) */}
+                  <td className="px-2 py-3">
+                    {lead.estado === "Interesado" ||
+                    lead.estado === "Inscrito" ? (
+                      <div className="bg-slate-50/50 p-1 rounded-xl border border-slate-100 flex flex-col gap-0.5">
                         <CheckboxItem
                           checked={lead.doc1}
-                          label={esAutonomo ? "Auton." : "Nómina"}
+                          label={
+                            lead.situacion === "Autonomo" ? "Recibo" : "Nómina"
+                          }
                           onChange={(v) => onUpdateLead(lead.id, "doc1", v)}
                         />
                         <CheckboxItem
                           checked={lead.doc2}
-                          label={esAutonomo ? "IAE" : "Cont."}
+                          label={
+                            lead.situacion === "Autonomo" ? "IAE" : "Cont."
+                          }
                           onChange={(v) => onUpdateLead(lead.id, "doc2", v)}
                         />
                       </div>
                     ) : (
-                      <span className="text-gray-300">—</span>
-                    )}
-                  </td>
-
-                  <td className="px-1 py-2 text-center">
-                    {esInscrito ? (
-                      <div className="flex justify-center">
-                        <ElegantDatePicker
-                          type="date"
-                          value={lead.inicioClase}
-                          onChange={(v) =>
-                            onUpdateLead(lead.id, "inicioClase", v)
-                          }
-                          colorClass={!lead.inicioClase ? "red" : "indigo"}
-                        />
+                      <div className="text-center text-slate-200 text-[10px]">
+                        ---
                       </div>
-                    ) : (
-                      <span className="text-gray-300">—</span>
                     )}
                   </td>
 
-                  <td className="px-1 py-2 text-center">
-                    {esInscrito ? (
+                  {/* RESTO DE COLUMNAS */}
+                  <td className="px-2 py-3 text-center">
+                    {lead.estado === "Inscrito" ? (
+                      <ElegantDatePicker
+                        value={lead.inicioClase}
+                        onChange={(v) =>
+                          onUpdateLead(lead.id, "inicioClase", v)
+                        }
+                        colorClass="indigo"
+                      />
+                    ) : (
+                      "---"
+                    )}
+                  </td>
+
+                  <td className="px-2 py-3 text-center">
+                    {lead.estado === "Inscrito" && (
                       <div className="flex justify-center">
                         <CheckboxItem
                           checked={lead.tieneUsuarios}
@@ -378,139 +336,77 @@ export default function LeadTable({
                           }
                         />
                       </div>
-                    ) : (
-                      <span className="text-gray-300">—</span>
                     )}
                   </td>
 
-                  <td className="px-1 py-2 text-center">
-                    {esInscrito ? (
-                      <span
-                        className={`text-[9px] font-bold ${nFaltas >= 3 ? "text-red-500" : "text-gray-400"}`}
-                      >
-                        {nFaltas}F
-                      </span>
-                    ) : (
-                      <span className="text-gray-300">—</span>
-                    )}
+                  <td className="px-2 py-3 text-center">
+                    <span
+                      className={`text-[10px] font-black ${nFaltas >= 3 ? "text-red-500" : "text-slate-400"}`}
+                    >
+                      {nFaltas}F
+                    </span>
                   </td>
 
-                  <td className="px-1 py-2 text-center">
-                    {esInscrito ? (
-                      nFaltas >= 3 ? (
-                        <span className="text-[8px] font-bold text-gray-300 italic">
-                          No Apto
-                        </span>
-                      ) : (
-                        <AccordionSelect
-                          value={lead.regalo || "no"}
-                          isOpen={openDropdownId === `${lead.id}-reg`}
-                          onToggle={() => toggleDropdown(`${lead.id}-reg`)}
-                          options={[
-                            { value: "no", label: "No" },
-                            { value: "si", label: "Sí" },
-                          ]}
-                          onChange={(v) => onUpdateLead(lead.id, "regalo", v)}
-                          renderBadge={(v) => (
-                            <span
-                              className={`px-2 py-1 rounded-lg text-[8px] font-black border ${v === "si" ? "text-emerald-600 border-emerald-100 bg-emerald-50" : "text-gray-400 border-gray-100 bg-white"}`}
-                            >
-                              {v === "si" ? "🎁 OK" : "PEND."}
-                            </span>
-                          )}
-                        />
-                      )
-                    ) : (
-                      <span className="text-gray-300">—</span>
-                    )}
-                  </td>
-
-                  <td className="px-1 py-2 text-center">
-                    {esInscrito ? (
+                  <td className="px-2 py-3 text-center">
+                    {lead.estado === "Inscrito" && (
                       <AccordionSelect
-                        value={
-                          nFaltas >= 3 ? "no apto" : lead.status || "ninguno"
+                        value={lead.status || "en curso"}
+                        isOpen={openDropdownId === lead.id + "sts"}
+                        onToggle={() =>
+                          setOpenDropdownId(
+                            openDropdownId === lead.id + "sts"
+                              ? null
+                              : lead.id + "sts",
+                          )
                         }
-                        isOpen={openDropdownId === `${lead.id}-sts`}
-                        onToggle={() => toggleDropdown(`${lead.id}-sts`)}
-                        disabledOptions={!tieneUser ? ["finalizado"] : []}
                         options={[
-                          { value: "ninguno", label: "Ninguno" },
                           { value: "en curso", label: "En Curso" },
                           { value: "finalizado", label: "Finalizado" },
                           { value: "abandonado", label: "Abandonado" },
                         ]}
                         onChange={(v) => onUpdateLead(lead.id, "status", v)}
-                        renderBadge={(v) => {
-                          if (v === "finalizado" && !tieneUser)
-                            onUpdateLead(lead.id, "status", "en curso");
-                          return (
-                            <span
-                              className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase border ${v === "finalizado" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : v === "no apto" ? "bg-red-50 text-red-600 border-red-100" : v === "abandonado" ? "bg-amber-50 text-amber-600 border-amber-100" : v === "en curso" ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-white text-gray-400 border-gray-100"}`}
-                            >
-                              {v}
-                            </span>
-                          );
-                        }}
+                        renderBadge={(v) => (
+                          <span
+                            className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase ${v === "finalizado" ? "bg-emerald-50 text-emerald-600" : v === "abandonado" ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"}`}
+                          >
+                            {v}
+                          </span>
+                        )}
                       />
-                    ) : (
-                      <span className="text-gray-300">—</span>
                     )}
                   </td>
 
-                  <td className="px-2 py-2 text-center">
-                    <div className="flex justify-center gap-0.5">
-                      {esInscrito && (
-                        <button
-                          onClick={() =>
-                            canFollow
-                              ? onFollowUp(lead)
-                              : onShowWarning("Docs/User OK")
-                          }
-                          className={`p-1 rounded-md transition-all ${canFollow ? "text-indigo-400 hover:bg-indigo-50" : "text-gray-200 cursor-not-allowed"}`}
-                        >
-                          <svg
-                            className="w-3.5 h-3.5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-                              strokeWidth={2.5}
-                            />
-                          </svg>
-                        </button>
-                      )}
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex justify-end gap-2">
                       <button
                         onClick={() => onEditLead(lead)}
-                        className="p-1 text-gray-300 hover:text-indigo-600 rounded-md transition-all"
+                        className="p-1.5 text-slate-300 hover:text-indigo-600 transition-colors"
                       >
                         <svg
-                          className="w-3.5 h-3.5"
+                          className="w-4 h-4"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
                         >
                           <path
                             d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                            strokeWidth={2.5}
+                            strokeWidth={2}
                           />
                         </svg>
                       </button>
                       <button
                         onClick={() => onDeleteLead(lead.id)}
-                        className="p-1 text-red-200 hover:text-red-500 rounded-md transition-all"
+                        className="p-1.5 text-red-200 hover:text-red-500 transition-colors"
                       >
                         <svg
-                          className="w-3.5 h-3.5"
+                          className="w-4 h-4"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
                         >
                           <path
                             d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            strokeWidth={2.5}
+                            strokeWidth={2}
                           />
                         </svg>
                       </button>
