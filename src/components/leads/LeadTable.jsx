@@ -198,9 +198,8 @@ export default function LeadTable({
                   key={lead.id}
                   className={`transition-colors group border-l-4 ${rowColorClass} ${borderColor}`}
                 >
-                  {/* CLIENTE - AHORA CON FECHA DE CREACIÓN CONDICIONAL */}
-                  <td className="px-4 py-3 min-w-[200px]">
-                    {/* FECHA DE REGISTRO (Mini Etiqueta Superior) SOLO SE MUESTRA SI TIENE FECHA */}
+                  {/* CLIENTE */}
+                  <td className="px-4 py-3 min-w-[200px] align-top">
                     {lead.fechaCreacion && (
                       <div className="text-[6.5px] font-black text-slate-300 uppercase tracking-widest mb-1.5 flex items-center gap-1">
                         <svg
@@ -236,7 +235,6 @@ export default function LeadTable({
                       <span className="text-slate-500 bg-slate-200/50 px-1.5 py-0.5 rounded border border-slate-200">
                         {lead.provincia}
                       </span>
-
                       <AccordionSelect
                         compact={true}
                         value={lead.situacion || "Null"}
@@ -269,46 +267,87 @@ export default function LeadTable({
                     )}
                   </td>
 
-                  {/* CONTACTO */}
-                  <td className="px-4 py-3 space-y-1">
-                    <div
-                      className="flex items-center gap-1.5 group/copy cursor-pointer font-bold text-slate-700 text-[10px]"
-                      onClick={() => handleCopy(lead.id, lead.whatsapp, "tel")}
-                    >
-                      <span>+34{lead.whatsapp}</span>
-                      <svg
-                        className={`w-3 h-3 ${copiedId === lead.id + "tel" ? "text-emerald-500" : "opacity-0 group-hover/copy:opacity-100 text-slate-400"}`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                  {/* CONTACTO - ICONOS UNIFICADOS (VISIBLES Y MISMO TAMAÑO) */}
+                  <td className="px-4 py-3 space-y-1.5 align-top">
+                    {/* Teléfono + Copiar + WhatsApp */}
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="flex items-center gap-1.5 group cursor-pointer font-bold text-slate-700 text-[10px]"
+                        onClick={() =>
+                          handleCopy(lead.id, lead.whatsapp, "tel")
+                        }
+                        title="Copiar teléfono"
                       >
-                        <path
-                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                          strokeWidth={3}
-                        />
-                      </svg>
+                        <span>+34{lead.whatsapp}</span>
+                        {/* ICONO COPIAR TELÉFONO */}
+                        <svg
+                          className={`w-3.5 h-3.5 transition-transform hover:scale-110 active:scale-95 ${copiedId === lead.id + "tel" ? "text-emerald-500 drop-shadow-sm" : "text-slate-300 group-hover:text-slate-500"}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                          />
+                        </svg>
+                      </div>
+
+                      {/* ICONO WHATSAPP */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onUpdateLead(
+                            lead.id,
+                            "respondioWpp",
+                            !lead.respondioWpp,
+                          );
+                        }}
+                        className={`transition-transform hover:scale-110 active:scale-95 ${lead.respondioWpp ? "text-emerald-500 drop-shadow-sm" : "text-slate-300 hover:text-emerald-400"}`}
+                        title={
+                          lead.respondioWpp
+                            ? "Respondió WhatsApp"
+                            : "No respondió WhatsApp"
+                        }
+                      >
+                        <svg
+                          className="w-3.5 h-3.5"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.305-.885-.653-1.48-1.459-1.653-1.756-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+                        </svg>
+                      </button>
                     </div>
+
+                    {/* Email + Copiar */}
                     <div
-                      className={`flex items-center gap-1.5 ${lead.email ? "group/copy cursor-pointer" : ""}`}
+                      className={`flex items-center gap-1.5 ${lead.email ? "group cursor-pointer" : ""}`}
                       onClick={() =>
                         lead.email && handleCopy(lead.id, lead.email, "mail")
                       }
+                      title={lead.email ? "Copiar email" : ""}
                     >
                       <span
                         className={`text-[9px] truncate max-w-[100px] ${lead.email ? "text-slate-500" : "text-slate-300 italic tracking-tight"}`}
                       >
                         {lead.email || "No especificado"}
                       </span>
+                      {/* ICONO COPIAR EMAIL */}
                       {lead.email && (
                         <svg
-                          className={`w-2.5 h-2.5 ${copiedId === lead.id + "mail" ? "text-emerald-500" : "opacity-0 group-hover/copy:opacity-100 text-slate-400"}`}
+                          className={`w-3.5 h-3.5 transition-transform hover:scale-110 active:scale-95 ${copiedId === lead.id + "mail" ? "text-emerald-500 drop-shadow-sm" : "text-slate-300 group-hover:text-slate-500"}`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
                         >
                           <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
                             d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                            strokeWidth={3}
                           />
                         </svg>
                       )}
@@ -316,7 +355,7 @@ export default function LeadTable({
                   </td>
 
                   {/* ESTADO CON TERMÓMETRO */}
-                  <td className="px-2 py-3 text-center">
+                  <td className="px-2 py-3 text-center align-top">
                     <div className="flex flex-col items-center gap-1.5">
                       <AccordionSelect
                         value={lead.estado}
@@ -402,7 +441,7 @@ export default function LeadTable({
                   </td>
 
                   {/* TURNO/CITA */}
-                  <td className="px-2 py-3 text-center">
+                  <td className="px-2 py-3 text-center align-top">
                     {lead.estado === "Agendado" ? (
                       <ElegantDatePicker
                         type="datetime-local"
@@ -440,7 +479,7 @@ export default function LeadTable({
                   </td>
 
                   {/* DOCS */}
-                  <td className="px-2 py-3">
+                  <td className="px-2 py-3 align-top">
                     {lead.estado === "Inscrito" ||
                     lead.estado === "Interesado" ? (
                       <div className="bg-white/60 p-1.5 rounded-xl border border-slate-200 flex flex-col gap-1 shadow-sm">
@@ -461,7 +500,7 @@ export default function LeadTable({
                   </td>
 
                   {/* INICIO */}
-                  <td className="px-2 py-3 text-center">
+                  <td className="px-2 py-3 text-center align-top">
                     {lead.estado === "Inscrito" ? (
                       <ElegantDatePicker
                         type="date"
@@ -477,7 +516,7 @@ export default function LeadTable({
                   </td>
 
                   {/* USER */}
-                  <td className="px-2 py-3 text-center">
+                  <td className="px-2 py-3 text-center align-top">
                     {lead.estado === "Inscrito" && (
                       <div className="flex justify-center">
                         <CheckboxItem
@@ -492,7 +531,7 @@ export default function LeadTable({
                   </td>
 
                   {/* ASISTENCIA */}
-                  <td className="px-2 py-3 text-center">
+                  <td className="px-2 py-3 text-center align-top">
                     {lead.estado === "Inscrito" ? (
                       <button
                         onClick={() => onFollowUp(lead)}
@@ -521,7 +560,7 @@ export default function LeadTable({
                   </td>
 
                   {/* REGALO */}
-                  <td className="px-2 py-3 text-center">
+                  <td className="px-2 py-3 text-center align-top">
                     {lead.estado === "Inscrito" ? (
                       <AccordionSelect
                         value={lead.regalo || "no"}
@@ -552,7 +591,7 @@ export default function LeadTable({
                   </td>
 
                   {/* OBSERVACIONES */}
-                  <td className="px-2 py-3 text-center">
+                  <td className="px-2 py-3 text-center align-top">
                     {lead.comentarios ? (
                       <button
                         onClick={() =>
@@ -580,7 +619,7 @@ export default function LeadTable({
                   </td>
 
                   {/* ESTATUS CONDICIONAL */}
-                  <td className="px-2 py-3 text-center">
+                  <td className="px-2 py-3 text-center align-top">
                     {lead.estado === "Inscrito" && (
                       <AccordionSelect
                         value={lead.status || "en curso"}
@@ -628,7 +667,7 @@ export default function LeadTable({
                   </td>
 
                   {/* ACCIONES */}
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-right align-top">
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => onEditLead(lead)}

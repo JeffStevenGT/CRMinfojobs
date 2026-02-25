@@ -78,7 +78,7 @@ export default function CrmDashboard() {
           agendaStatus: "pendiente",
           comentarios: data.comentarios || "",
           temperatura: data.temperatura || "Tibio",
-          // SE AGREGA LA FECHA DE CREACIÓN AUTOMÁTICA AQUÍ
+          respondioWpp: false, // <-- NUEVO: Control de WhatsApp por defecto
           fechaCreacion: new Date().toISOString(),
         });
         notify("Nuevo lead registrado");
@@ -101,7 +101,6 @@ export default function CrmDashboard() {
     }
   };
 
-  // BUSCADOR INTELIGENTE + ORDENAMIENTO POR FECHA (MÁS RECIENTES PRIMERO)
   const filteredLeads = leadsCLM
     .filter((l) => {
       const b = searchTerm.toLowerCase();
@@ -114,7 +113,7 @@ export default function CrmDashboard() {
     .sort((a, b) => {
       const dateA = a.fechaCreacion ? new Date(a.fechaCreacion).getTime() : 0;
       const dateB = b.fechaCreacion ? new Date(b.fechaCreacion).getTime() : 0;
-      return dateB - dateA; // Orden descendente (Los nuevos arriba)
+      return dateB - dateA;
     });
 
   return (
