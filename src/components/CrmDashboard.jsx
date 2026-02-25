@@ -26,13 +26,14 @@ export default function CrmDashboard() {
   const [leadToEdit, setLeadToEdit] = useState(null);
   const [leadToFollow, setLeadToFollow] = useState(null);
 
-  // ESTADO PARA MODAL DE COMENTARIOS
+  // ESTADO DEL MODAL DE COMENTARIOS
   const [viewComment, setViewComment] = useState({
     open: false,
     text: "",
     client: "",
   });
 
+  // ESTADO DEL TOAST
   const [toast, setToast] = useState({
     show: false,
     message: "",
@@ -57,9 +58,9 @@ export default function CrmDashboard() {
   const handleUpdateLead = async (id, campo, valor) => {
     try {
       await updateDoc(doc(db, "leads", id), { [campo]: valor });
-      notify("Sincronizado");
+      notify("Dato actualizado");
     } catch (e) {
-      notify("Error", "error");
+      notify("Error de red", "error");
     }
   };
 
@@ -68,7 +69,7 @@ export default function CrmDashboard() {
       if (data.id) {
         const { id, ...cleanData } = data;
         await updateDoc(doc(db, "leads", id), cleanData);
-        notify("Actualizado");
+        notify("Perfil actualizado");
       } else {
         await addDoc(collection(db, "leads"), {
           ...data,
@@ -79,23 +80,24 @@ export default function CrmDashboard() {
           tieneUsuarios: false,
           agendaStatus: "pendiente",
           comentarios: data.comentarios || "",
+          temperatura: data.temperatura || "Tibio", // INYECCIÓN POR DEFECTO DEL TERMÓMETRO
         });
-        notify("Registrado");
+        notify("Nuevo lead registrado");
       }
       setIsModalOpen(false);
       setLeadToEdit(null);
     } catch (e) {
-      notify("Error", "error");
+      notify("Error al guardar", "error");
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("¿Eliminar?")) {
+    if (window.confirm("¿Seguro que quieres eliminar este lead?")) {
       try {
         await deleteDoc(doc(db, "leads", id));
-        notify("Eliminado", "error");
+        notify("Lead eliminado", "error");
       } catch (e) {
-        notify("Error", "error");
+        notify("No se pudo eliminar", "error");
       }
     }
   };
@@ -111,6 +113,7 @@ export default function CrmDashboard() {
 
   return (
     <div className="flex h-screen bg-[#FDFDFD] font-sans overflow-hidden relative">
+      {/* TOAST MINIMALISTA */}
       {toast.show && (
         <div className="fixed bottom-10 right-10 z-[300] animate-in slide-in-from-bottom-5 fade-in duration-300">
           <div
@@ -143,7 +146,7 @@ export default function CrmDashboard() {
                     CLM Turismo
                   </h1>
                   <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">
-                    Directorio de Gestión
+                    Directorio de Gestión Operativa
                   </p>
                 </div>
                 <button
@@ -167,7 +170,7 @@ export default function CrmDashboard() {
                 onDeleteLead={handleDelete}
                 onViewComment={(text, client) =>
                   setViewComment({ open: true, text, client })
-                } // CONEXIÓN
+                }
               />
             </div>
           )}
@@ -180,13 +183,14 @@ export default function CrmDashboard() {
                 setLeadToEdit(l);
                 setIsModalOpen(true);
               }}
-              titulo="Agenda CLM"
+              titulo="Agenda de Seguimiento"
             />
           )}
           {activeTab === "reportes-clm" && <ReportsView leads={leadsCLM} />}
         </div>
       </main>
 
+      {/* MODALES */}
       {isModalOpen && (
         <LeadFormModal
           leads={leadsCLM}
@@ -208,20 +212,22 @@ export default function CrmDashboard() {
             if (f >= 3 && s !== "abandonado" && s !== "finalizado")
               s = "no apto";
             else if (f < 3 && s === "no apto") s = "en curso";
+
             await updateDoc(doc(db, "leads", u.id), {
               ...u,
               faltas: f.toString(),
               status: s,
             });
-            if (f >= 3) notify("⚠️ NO APTO (+3 Faltas)", "error");
-            else notify("Asistencia OK");
+
+            if (f >= 3) notify("⚠️ NO APTO Automático", "error");
+            else notify("Asistencia guardada");
             setIsFollowUpOpen(false);
           }}
           lead={leadToFollow}
         />
       )}
 
-      {/* MODAL DE VER COMENTARIOS */}
+      {/* MODAL LECTURA DE COMENTARIOS */}
       {viewComment.open && (
         <div
           className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200"
@@ -232,16 +238,16 @@ export default function CrmDashboard() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
-              Notas sobre {viewComment.client}
+              Notas: {viewComment.client}
             </h3>
             <div className="bg-slate-50 p-6 rounded-2xl text-sm text-slate-600 font-medium leading-relaxed max-h-60 overflow-y-auto custom-scrollbar">
               {viewComment.text}
             </div>
             <button
               onClick={() => setViewComment({ ...viewComment, open: false })}
-              className="w-full mt-6 bg-indigo-50 text-indigo-600 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-100 transition-all"
+              className="w-full mt-6 bg-indigo-50 text-indigo-600 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-100 active:scale-95 transition-all"
             >
-              Cerrar
+              Cerrar Nota
             </button>
           </div>
         </div>

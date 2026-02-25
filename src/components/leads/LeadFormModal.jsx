@@ -11,11 +11,12 @@ export default function LeadFormModal({
     whatsapp: "",
     email: "",
     provincia: "",
-    situacion: "Null", // DEFAULT CORREGIDO
+    situacion: "Null", // Por defecto Null
     esReferido: "no",
     quienRefirio: "",
     fechaLlamada: "",
     inicioClase: "",
+    temperatura: "Tibio", // CAMPO DE TEMPERATURA POR DEFECTO
     comentarios: "",
   });
 
@@ -172,7 +173,6 @@ export default function LeadFormModal({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            {/* SITUACIÓN CON "NULL" */}
             <div className="space-y-1">
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
                 Situación
@@ -189,25 +189,44 @@ export default function LeadFormModal({
                 <option value="Autonomo">Autónomo</option>
               </select>
             </div>
+
+            {/* SELECTOR DE TEMPERATURA / INTERÉS */}
             <div className="space-y-1">
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                ¿Referido?
+              <label className="text-[9px] font-black text-amber-500 uppercase tracking-widest ml-1">
+                Interés Inicial
               </label>
               <select
-                value={formData.esReferido}
+                value={formData.temperatura}
                 onChange={(e) =>
-                  setFormData({ ...formData, esReferido: e.target.value })
+                  setFormData({ ...formData, temperatura: e.target.value })
                 }
-                className="w-full px-4 py-2 bg-slate-50 border-none rounded-xl text-[11px] font-bold outline-none"
+                className="w-full px-4 py-2 bg-amber-50 border-none rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-amber-200"
               >
-                <option value="no">No</option>
-                <option value="si">Sí</option>
+                <option value="Frío">❄️ Frío (Dudoso)</option>
+                <option value="Tibio">☀️ Tibio (Interesado)</option>
+                <option value="Caliente">🔥 Caliente (Muy Alto)</option>
               </select>
             </div>
           </div>
 
+          <div className="space-y-1">
+            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
+              ¿Referido?
+            </label>
+            <select
+              value={formData.esReferido}
+              onChange={(e) =>
+                setFormData({ ...formData, esReferido: e.target.value })
+              }
+              className="w-full px-4 py-2 bg-slate-50 border-none rounded-xl text-[11px] font-bold outline-none"
+            >
+              <option value="no">No</option>
+              <option value="si">Sí</option>
+            </select>
+          </div>
+
           {formData.esReferido === "si" && (
-            <div className="space-y-1 relative">
+            <div className="space-y-1 relative animate-in slide-in-from-top-2">
               <label className="text-[9px] font-black text-indigo-500 uppercase tracking-widest ml-1">
                 Referente
               </label>
@@ -238,6 +257,7 @@ export default function LeadFormModal({
             </div>
           )}
 
+          {/* CAMPO DE COMENTARIOS */}
           <div className="space-y-1">
             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
               Notas / Observaciones

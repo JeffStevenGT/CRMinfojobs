@@ -1,6 +1,5 @@
 import React, { useState, useRef } from "react";
 
-// --- SUB-COMPONENTES (Sin cambios de diseño) ---
 const ElegantDatePicker = ({
   value,
   onChange,
@@ -142,7 +141,7 @@ export default function LeadTable({
       className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden"
       onClick={() => setOpenDropdownId(null)}
     >
-      <div className="overflow-x-auto custom-scrollbar pb-24">
+      <div className="overflow-x-auto custom-scrollbar pb-32">
         <table className="min-w-full text-left">
           <thead className="bg-slate-50/50 border-b border-slate-100">
             <tr className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">
@@ -192,7 +191,7 @@ export default function LeadTable({
                   key={lead.id}
                   className={`transition-colors group border-l-4 ${rowColorClass} ${borderColor}`}
                 >
-                  {/* CLIENTE: CORRECCIÓN AQUÍ */}
+                  {/* CLIENTE */}
                   <td className="px-4 py-3">
                     <div className="font-bold text-slate-800 text-[11px] flex items-center gap-1.5">
                       {lead.nombre}
@@ -204,7 +203,6 @@ export default function LeadTable({
                     </div>
                     <div className="text-[8px] text-slate-500 font-bold uppercase mt-0.5 flex items-center gap-1">
                       <span>{lead.provincia} •</span>
-                      {/* LÓGICA DE VISUALIZACIÓN: Si es 'Desempleado' muestra 'Null' */}
                       <AccordionSelect
                         value={lead.situacion || "Null"}
                         isOpen={openDropdownId === lead.id + "sit"}
@@ -235,7 +233,7 @@ export default function LeadTable({
                     )}
                   </td>
 
-                  {/* CONTACTO: NO ESPECIFICADO + SIN ICONO */}
+                  {/* CONTACTO */}
                   <td className="px-4 py-3 space-y-1">
                     <div
                       className="flex items-center gap-1.5 group/copy cursor-pointer font-bold text-slate-700 text-[10px]"
@@ -254,7 +252,6 @@ export default function LeadTable({
                         />
                       </svg>
                     </div>
-
                     <div
                       className={`flex items-center gap-1.5 ${lead.email ? "group/copy cursor-pointer" : ""}`}
                       onClick={() =>
@@ -266,7 +263,6 @@ export default function LeadTable({
                       >
                         {lead.email || "No especificado"}
                       </span>
-                      {/* ICONO SOLO SI HAY EMAIL */}
                       {lead.email && (
                         <svg
                           className={`w-2.5 h-2.5 ${copiedId === lead.id + "mail" ? "text-emerald-500" : "opacity-0 group-hover/copy:opacity-100 text-slate-400"}`}
@@ -283,44 +279,94 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* RESTO DE COLUMNAS (Sin cambios) */}
+                  {/* ESTADO CON TERMÓMETRO */}
                   <td className="px-2 py-3 text-center">
-                    <AccordionSelect
-                      value={lead.estado}
-                      isOpen={openDropdownId === lead.id + "st"}
-                      onToggle={() =>
-                        setOpenDropdownId(
-                          openDropdownId === lead.id + "st"
-                            ? null
-                            : lead.id + "st",
-                        )
-                      }
-                      options={[
-                        { value: "Agendado", label: "Agendado" },
-                        { value: "Interesado", label: "Interesado" },
-                        { value: "Inscrito", label: "Inscrito" },
-                        { value: "No Interesado", label: "No" },
-                      ]}
-                      onChange={(v) => onUpdateLead(lead.id, "estado", v)}
-                      renderBadge={(v) => {
-                        const c =
-                          v === "Inscrito"
-                            ? "text-emerald-700 bg-emerald-100"
-                            : v === "No Interesado"
-                              ? "text-red-600 bg-red-100"
-                              : v === "Interesado"
-                                ? "text-violet-700 bg-violet-100"
-                                : "text-sky-700 bg-sky-100";
-                        return (
-                          <span
-                            className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase shadow-sm ${c}`}
-                          >
-                            {v === "No Interesado" ? "No" : v}
-                          </span>
-                        );
-                      }}
-                    />
+                    <div className="flex flex-col items-center gap-1.5">
+                      <AccordionSelect
+                        value={lead.estado}
+                        isOpen={openDropdownId === lead.id + "st"}
+                        onToggle={() =>
+                          setOpenDropdownId(
+                            openDropdownId === lead.id + "st"
+                              ? null
+                              : lead.id + "st",
+                          )
+                        }
+                        options={[
+                          { value: "Agendado", label: "Agendado" },
+                          { value: "Interesado", label: "Interesado" },
+                          { value: "Inscrito", label: "Inscrito" },
+                          { value: "No Interesado", label: "No" },
+                        ]}
+                        onChange={(v) => onUpdateLead(lead.id, "estado", v)}
+                        renderBadge={(v) => {
+                          const c =
+                            v === "Inscrito"
+                              ? "text-emerald-700 bg-emerald-100"
+                              : v === "No Interesado"
+                                ? "text-red-600 bg-red-100"
+                                : v === "Interesado"
+                                  ? "text-violet-700 bg-violet-100"
+                                  : "text-sky-700 bg-sky-100";
+                          return (
+                            <span
+                              className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase shadow-sm ${c}`}
+                            >
+                              {v === "No Interesado" ? "No" : v}
+                            </span>
+                          );
+                        }}
+                      />
+
+                      {/* MINI-TERMÓMETRO DE INTERÉS */}
+                      {(lead.estado === "Agendado" ||
+                        lead.estado === "Interesado") && (
+                        <AccordionSelect
+                          value={lead.temperatura || "Tibio"}
+                          isOpen={openDropdownId === lead.id + "temp"}
+                          onToggle={() =>
+                            setOpenDropdownId(
+                              openDropdownId === lead.id + "temp"
+                                ? null
+                                : lead.id + "temp",
+                            )
+                          }
+                          options={[
+                            { value: "Frío", label: "❄️ Frío" },
+                            { value: "Tibio", label: "☀️ Tibio" },
+                            { value: "Caliente", label: "🔥 Alto" },
+                          ]}
+                          onChange={(v) =>
+                            onUpdateLead(lead.id, "temperatura", v)
+                          }
+                          renderBadge={(v) => {
+                            let color =
+                              "text-amber-600 bg-amber-50 border-amber-100";
+                            let icon = "☀️";
+                            if (v === "Caliente") {
+                              color =
+                                "text-orange-600 bg-orange-50 border-orange-200";
+                              icon = "🔥";
+                            }
+                            if (v === "Frío") {
+                              color =
+                                "text-blue-500 bg-blue-50 border-blue-100";
+                              icon = "❄️";
+                            }
+                            return (
+                              <span
+                                className={`px-1.5 py-0.5 rounded border text-[7px] font-black uppercase shadow-sm flex items-center gap-1 ${color}`}
+                              >
+                                <span>{icon}</span> {v}
+                              </span>
+                            );
+                          }}
+                        />
+                      )}
+                    </div>
                   </td>
+
+                  {/* TURNO/CITA */}
                   <td className="px-2 py-3 text-center">
                     {lead.estado === "Agendado" ? (
                       <ElegantDatePicker
@@ -357,6 +403,8 @@ export default function LeadTable({
                       "---"
                     )}
                   </td>
+
+                  {/* DOCS */}
                   <td className="px-2 py-3">
                     {lead.estado === "Inscrito" ||
                     lead.estado === "Interesado" ? (
@@ -376,6 +424,8 @@ export default function LeadTable({
                       <div className="text-center text-slate-300">---</div>
                     )}
                   </td>
+
+                  {/* INICIO */}
                   <td className="px-2 py-3 text-center">
                     {lead.estado === "Inscrito" ? (
                       <ElegantDatePicker
@@ -390,6 +440,8 @@ export default function LeadTable({
                       "---"
                     )}
                   </td>
+
+                  {/* USER */}
                   <td className="px-2 py-3 text-center">
                     {lead.estado === "Inscrito" && (
                       <div className="flex justify-center">
@@ -403,6 +455,8 @@ export default function LeadTable({
                       </div>
                     )}
                   </td>
+
+                  {/* ASISTENCIA */}
                   <td className="px-2 py-3 text-center">
                     {lead.estado === "Inscrito" ? (
                       <button
@@ -430,6 +484,8 @@ export default function LeadTable({
                       <span className="text-slate-300 text-[10px]">---</span>
                     )}
                   </td>
+
+                  {/* REGALO */}
                   <td className="px-2 py-3 text-center">
                     {lead.estado === "Inscrito" ? (
                       <AccordionSelect
@@ -459,13 +515,15 @@ export default function LeadTable({
                       <span className="text-slate-300 text-[10px]">---</span>
                     )}
                   </td>
+
+                  {/* OBSERVACIONES */}
                   <td className="px-2 py-3 text-center">
                     {lead.comentarios ? (
                       <button
                         onClick={() =>
                           onViewComment(lead.comentarios, lead.nombre)
                         }
-                        className="bg-indigo-50 text-indigo-600 p-2 rounded-xl hover:bg-indigo-100 transition-colors border border-indigo-100"
+                        className="bg-indigo-50 text-indigo-600 p-2 rounded-xl hover:bg-indigo-100 transition-colors border border-indigo-100 shadow-sm active:scale-95"
                       >
                         <svg
                           className="w-3.5 h-3.5"
@@ -485,6 +543,8 @@ export default function LeadTable({
                       <span className="text-slate-200">-</span>
                     )}
                   </td>
+
+                  {/* ESTATUS CONDICIONAL */}
                   <td className="px-2 py-3 text-center">
                     {lead.estado === "Inscrito" && (
                       <AccordionSelect
@@ -527,6 +587,8 @@ export default function LeadTable({
                       />
                     )}
                   </td>
+
+                  {/* ACCIONES */}
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-2">
                       <button
