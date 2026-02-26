@@ -56,18 +56,6 @@ export default function CrmDashboard() {
     );
   };
 
-  // --- MIGRACIÓN: Pone 'CLM' a los leads que no tienen proyecto ---
-  const migrateLeads = async () => {
-    const sinProy = leadsCLM.filter((l) => !l.proyecto);
-    if (sinProy.length === 0) return notify("Sin leads pendientes", "info");
-    if (window.confirm(`¿Etiquetar ${sinProy.length} leads como CLM?`)) {
-      for (const l of sinProy) {
-        await updateDoc(doc(db, "leads", l.id), { proyecto: "CLM" });
-      }
-      notify("Base de datos actualizada");
-    }
-  };
-
   const handleSaveLead = async (data) => {
     try {
       if (data.id) {
@@ -92,7 +80,7 @@ export default function CrmDashboard() {
       setIsModalOpen(false);
       setLeadToEdit(null);
     } catch (e) {
-      notify("Error de guardado", "error");
+      notify("Error", "error");
     }
   };
 
@@ -115,7 +103,7 @@ export default function CrmDashboard() {
       const b = searchTerm.toLowerCase();
       const matchText =
         l.nombre?.toLowerCase().includes(b) || l.whatsapp?.includes(searchTerm);
-      const proj = l.proyecto || "CLM"; // Fallback para visualización antes de migrar
+      const proj = l.proyecto || "CLM";
       const matchProject = projectFilter === "todos" || proj === projectFilter;
       return matchText && matchProject;
     })
@@ -127,7 +115,7 @@ export default function CrmDashboard() {
     <div className="flex h-screen bg-[#FDFDFD] font-sans overflow-hidden relative">
       {toast.show && (
         <div
-          className={`fixed bottom-10 right-10 z-[700] px-6 py-3 rounded-full shadow-2xl animate-in fade-in slide-in-from-bottom-4 ${toast.type === "success" ? "bg-slate-800 text-white" : "bg-rose-500 text-white"}`}
+          className={`fixed bottom-10 right-10 z-[700] px-6 py-3 rounded-full shadow-2xl bg-slate-800 text-white animate-in fade-in slide-in-from-bottom-4`}
         >
           <span className="text-[10px] font-black uppercase tracking-widest">
             {toast.message}
@@ -152,26 +140,41 @@ export default function CrmDashboard() {
                   <h1 className="text-xl font-black text-slate-800 uppercase tracking-widest italic">
                     Panel de Gestión
                   </h1>
-                  <button
-                    onClick={migrateLeads}
-                    className="text-[8px] font-black text-indigo-400 hover:text-indigo-600 uppercase mt-1"
-                  >
-                    ⚙️ Sincronizar campañas antiguas
-                  </button>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">
+                    Control de Campañas Activas
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {/* FILTRO PROYECTO */}
+                  {/* FILTRO PROYECTO CON COLORES DINÁMICOS */}
                   <div className="bg-white p-1 rounded-2xl border border-slate-200 flex items-center shadow-sm">
-                    {["todos", "CLM", "Lideres", "Sandetel"].map((p) => (
-                      <button
-                        key={p}
-                        onClick={() => setProjectFilter(p)}
-                        className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${projectFilter === p ? "bg-slate-800 text-white shadow-md" : "text-slate-400 hover:text-slate-600"}`}
-                      >
-                        {p === "todos" ? "🌎 Todos" : p}
-                      </button>
-                    ))}
+                    <button
+                      onClick={() => setProjectFilter("todos")}
+                      className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${projectFilter === "todos" ? "bg-slate-800 text-white shadow-md" : "text-slate-400 hover:text-slate-600"}`}
+                    >
+                      🌎 Todos
+                    </button>
+
+                    <button
+                      onClick={() => setProjectFilter("CLM")}
+                      className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${projectFilter === "CLM" ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" : "text-slate-400 hover:text-indigo-400"}`}
+                    >
+                      CLM
+                    </button>
+
+                    <button
+                      onClick={() => setProjectFilter("Lideres")}
+                      className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${projectFilter === "Lideres" ? "bg-amber-500 text-white shadow-md shadow-amber-100" : "text-slate-400 hover:text-amber-500"}`}
+                    >
+                      LÍDERES
+                    </button>
+
+                    <button
+                      onClick={() => setProjectFilter("Sandetel")}
+                      className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${projectFilter === "Sandetel" ? "bg-cyan-500 text-white shadow-md shadow-cyan-100" : "text-slate-400 hover:text-cyan-500"}`}
+                    >
+                      SANDETEL
+                    </button>
                   </div>
 
                   <div className="bg-slate-200/50 p-1 rounded-xl flex items-center border border-slate-200">
@@ -214,6 +217,9 @@ export default function CrmDashboard() {
                       setLeadToFollow(l);
                       setIsFollowUpOpen(true);
                     }}
+                    onDeleteLead={() => {}}
+                    onViewComment={() => {}}
+                    onFinalize={() => {}}
                     onManageLead={(l) => setManageModalLeadId(l.id)}
                   />
                 ) : (
@@ -257,6 +263,7 @@ export default function CrmDashboard() {
 
       {isModalOpen && (
         <LeadFormModal
+          leads={leadsCLM}
           onClose={() => {
             setIsModalOpen(false);
             setLeadToEdit(null);
@@ -281,61 +288,6 @@ export default function CrmDashboard() {
           }}
           lead={leadToFollow}
         />
-      )}
-
-      {/* MODAL CIERRE COMISION */}
-      {finalizeModal.open && (
-        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl">
-            <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest text-center mb-6">
-              Finalizar para Pago
-            </h3>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSaveLead({
-                  ...finalizeModal.lead,
-                  status: "finalizado",
-                  inicioClase: finalizeModal.fechaInicio,
-                  fechaFinClase: finalizeModal.fechaFin,
-                });
-                setFinalizeModal({ open: false });
-              }}
-              className="space-y-4"
-            >
-              <input
-                required
-                type="date"
-                value={finalizeModal.fechaInicio}
-                onChange={(e) =>
-                  setFinalizeModal({
-                    ...finalizeModal,
-                    fechaInicio: e.target.value,
-                  })
-                }
-                className="w-full p-3 bg-slate-50 rounded-xl text-xs font-bold"
-              />
-              <input
-                required
-                type="date"
-                value={finalizeModal.fechaFin}
-                onChange={(e) =>
-                  setFinalizeModal({
-                    ...finalizeModal,
-                    fechaFin: e.target.value,
-                  })
-                }
-                className="w-full p-3 bg-slate-50 rounded-xl text-xs font-bold"
-              />
-              <button
-                type="submit"
-                className="w-full bg-emerald-500 text-white py-3 rounded-xl text-[10px] font-black uppercase"
-              >
-                Comisionar
-              </button>
-            </form>
-          </div>
-        </div>
       )}
     </div>
   );
