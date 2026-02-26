@@ -65,7 +65,7 @@ const AccordionSelect = ({
   compact,
 }) => (
   <div
-    className={`relative flex flex-col ${compact ? "w-auto items-start" : "items-center w-full min-w-[100px]"}`}
+    className={`relative flex flex-col ${compact ? "w-auto items-center" : "items-center w-full min-w-[100px]"}`}
   >
     <div
       onClick={(e) => {
@@ -77,7 +77,7 @@ const AccordionSelect = ({
       {renderBadge(value)}
     </div>
     <div
-      className={`absolute z-[100] overflow-hidden transition-all duration-300 ${compact ? "min-w-[100px] left-0" : "w-full min-w-[120px]"} top-full ${isOpen ? "max-h-60 opacity-100 mt-1" : "max-h-0 opacity-0"}`}
+      className={`absolute z-[100] overflow-hidden transition-all duration-300 ${compact ? "min-w-[100px] left-1/2 -translate-x-1/2" : "w-full min-w-[120px] left-0"} top-full ${isOpen ? "max-h-60 opacity-100 mt-1" : "max-h-0 opacity-0"}`}
     >
       <div className="flex flex-col gap-0.5 bg-white p-1 rounded-xl border border-slate-200 shadow-xl">
         {options.map((opt) => (
@@ -118,10 +118,10 @@ export default function LeadTable({
     setTimeout(() => setCopiedId(null), 1500);
   };
 
+  // AJUSTE: Centrado vertical (justify-center) en el contenedor interior.
   const capsuleStyle =
     "bg-white/60 backdrop-blur-sm hover:bg-white/95 transition-all duration-300 rounded-xl px-2.5 py-1.5 border border-white/60 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex flex-col h-full w-full relative justify-center";
 
-  // --- NUEVA LÓGICA DE FILTROS INDEPENDIENTES ---
   const filtros = [
     { id: "Todos", label: "Todos", icon: "📋" },
     { id: "Agendado", label: "Agendados", icon: "📞" },
@@ -132,12 +132,10 @@ export default function LeadTable({
     { id: "No Interesado", label: "No Interesados", icon: "🛑" },
   ];
 
-  // Aplicación inteligente del filtro sin romper tu base de datos
   const leadsFiltrados = leads.filter((l) => {
     if (estadoFilter === "Todos") return true;
     if (estadoFilter === "No Apto")
       return l.estado === "Inscrito" && l.status === "no apto";
-    // Si filtramos por Matriculados, excluimos a los No Aptos para que no se dupliquen
     if (estadoFilter === "Inscrito")
       return l.estado === "Inscrito" && l.status !== "no apto";
     return l.estado === estadoFilter;
@@ -150,7 +148,6 @@ export default function LeadTable({
     >
       <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2 overflow-x-auto custom-scrollbar bg-slate-50/50 z-20 shrink-0">
         {filtros.map((f) => {
-          // Conteo inteligente para cada categoría
           let count = 0;
           if (f.id === "Todos") count = leads.length;
           else if (f.id === "No Apto")
@@ -235,9 +232,11 @@ export default function LeadTable({
                   key={lead.id}
                   className={`group border-l-4 rounded-xl ${rowColorClass} ${borderColor} relative ${isRowActive ? "z-50" : "z-0"}`}
                 >
-                  <td className="p-0.5 align-top min-w-[200px]">
+                  {/* AJUSTE: Cambiado align-top por align-middle en todos los <td> */}
+                  <td className="p-0.5 align-middle min-w-[200px]">
+                    {/* AJUSTE: Mantenemos items-start para los textos, pero justify-center centra todo el bloque */}
                     <div
-                      className={`${capsuleStyle} justify-start items-start ${isRowActive ? "z-50" : "z-0"}`}
+                      className={`${capsuleStyle} items-start ${isRowActive ? "z-50" : "z-0"}`}
                     >
                       {lead.fechaCreacion && (
                         <div className="text-[6px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 bg-white px-1.5 py-0.5 rounded shadow-sm border border-slate-100">
@@ -315,9 +314,9 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  <td className="p-0.5 align-top min-w-[140px]">
+                  <td className="p-0.5 align-middle min-w-[140px]">
                     <div
-                      className={`${capsuleStyle} justify-center items-start gap-1.5 ${isRowActive ? "z-50" : "z-0"}`}
+                      className={`${capsuleStyle} items-center gap-1.5 ${isRowActive ? "z-50" : "z-0"}`}
                     >
                       <div className="flex items-center gap-1.5 w-full">
                         <div
@@ -400,9 +399,9 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  <td className="p-0.5 align-top w-[120px]">
+                  <td className="p-0.5 align-middle w-[120px]">
                     <div
-                      className={`${capsuleStyle} justify-center items-center ${isRowActive ? "z-50" : "z-0"}`}
+                      className={`${capsuleStyle} items-center ${isRowActive ? "z-50" : "z-0"}`}
                     >
                       <div className="flex items-center gap-1 w-full justify-center">
                         <div className="flex-1 min-w-0">
@@ -509,9 +508,9 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  <td className="p-0.5 align-top w-[110px]">
+                  <td className="p-0.5 align-middle w-[110px]">
                     <div
-                      className={`${capsuleStyle} justify-center items-center ${isRowActive ? "z-50" : "z-0"}`}
+                      className={`${capsuleStyle} items-center ${isRowActive ? "z-50" : "z-0"}`}
                     >
                       {lead.estado === "Inscrito" ? (
                         <AccordionSelect
@@ -570,9 +569,9 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  <td className="p-0.5 align-top w-[130px]">
+                  <td className="p-0.5 align-middle w-[130px]">
                     <div
-                      className={`${capsuleStyle} justify-center items-center gap-1.5 ${isRowActive ? "z-50" : "z-0"}`}
+                      className={`${capsuleStyle} items-center gap-1.5 ${isRowActive ? "z-50" : "z-0"}`}
                     >
                       {lead.estado === "Agendado" && (
                         <div className="flex flex-col items-center gap-1 w-full">
@@ -758,9 +757,9 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  <td className="p-0.5 align-top w-[60px]">
+                  <td className="p-0.5 align-middle w-[60px]">
                     <div
-                      className={`${capsuleStyle} justify-center items-center ${isRowActive ? "z-50" : "z-0"}`}
+                      className={`${capsuleStyle} items-center ${isRowActive ? "z-50" : "z-0"}`}
                     >
                       {lead.comentarios ? (
                         <button
@@ -790,9 +789,9 @@ export default function LeadTable({
                       )}
                     </div>
                   </td>
-                  <td className="p-0.5 align-top w-[80px]">
+                  <td className="p-0.5 align-middle w-[80px]">
                     <div
-                      className={`${capsuleStyle} flex-row justify-center items-center gap-1.5 ${isRowActive ? "z-50" : "z-0"}`}
+                      className={`${capsuleStyle} flex-row items-center gap-1.5 ${isRowActive ? "z-50" : "z-0"}`}
                     >
                       <button
                         onClick={() => onEditLead(lead)}
