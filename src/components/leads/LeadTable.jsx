@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 
-// --- SUB-COMPONENTES (Más compactos) ---
+// --- SUB-COMPONENTES ---
 const ElegantDatePicker = ({
   value,
   onChange,
@@ -80,7 +80,7 @@ const AccordionSelect = ({
               onChange(opt.value);
               onToggle();
             }}
-            className={`px-2 py-1 text-[9px] font-bold rounded-lg text-center w-full transition-colors ${value === opt.value ? "bg-indigo-50 text-indigo-600" : "text-slate-500 hover:bg-slate-50"}`}
+            className={`px-2 py-1.5 text-[9px] font-bold rounded-lg text-center w-full transition-colors ${value === opt.value ? "bg-indigo-50 text-indigo-600" : "text-slate-500 hover:bg-slate-50"}`}
           >
             {opt.label}
           </button>
@@ -110,7 +110,6 @@ export default function LeadTable({
     setTimeout(() => setCopiedId(null), 1500);
   };
 
-  // ESTILO BASE DE LA CÁPSULA
   const capsuleStyle =
     "bg-white/60 backdrop-blur-sm hover:bg-white/95 transition-all duration-300 rounded-xl px-2.5 py-1.5 border border-white/60 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex flex-col h-full w-full relative justify-center";
 
@@ -139,9 +138,6 @@ export default function LeadTable({
               ).length;
               const nFaltas = 20 - asistencias;
               const isReferido = lead.esReferido === "si";
-
-              // === LÓGICA DE CAPAS (Z-INDEX) ===
-              // Verifica si ESTE lead en particular tiene algún menú abierto
               const isRowActive =
                 openDropdownId && openDropdownId.startsWith(lead.id);
 
@@ -167,7 +163,6 @@ export default function LeadTable({
               }
 
               return (
-                // Añadimos relative y z-50 solo a la fila activa para que resalte sobre las de abajo
                 <tr
                   key={lead.id}
                   className={`group border-l-4 rounded-xl ${rowColorClass} ${borderColor} relative ${isRowActive ? "z-50" : "z-0"}`}
@@ -339,98 +334,112 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* CÁPSULA 3: ESTADO */}
+                  {/* CÁPSULA 3: ESTADO Y TEMPERATURA (NUEVO DISEÑO LADO A LADO) */}
                   <td className="p-0.5 align-top w-[120px]">
                     <div
-                      className={`${capsuleStyle} justify-center items-center gap-1.5 ${isRowActive ? "z-50" : "z-0"}`}
+                      className={`${capsuleStyle} justify-center items-center ${isRowActive ? "z-50" : "z-0"}`}
                     >
-                      <AccordionSelect
-                        value={lead.estado}
-                        isOpen={openDropdownId === lead.id + "st"}
-                        onToggle={() =>
-                          setOpenDropdownId(
-                            openDropdownId === lead.id + "st"
-                              ? null
-                              : lead.id + "st",
-                          )
-                        }
-                        options={[
-                          { value: "Agendado", label: "Agendado" },
-                          { value: "Interesado", label: "Interesado" },
-                          { value: "Inscrito", label: "Matriculado" },
-                          { value: "No Interesado", label: "No Interesado" },
-                        ]}
-                        onChange={(v) => onUpdateLead(lead.id, "estado", v)}
-                        renderBadge={(v) => {
-                          const c =
-                            v === "Inscrito"
-                              ? "text-emerald-700 bg-emerald-100 border-emerald-200"
-                              : v === "No Interesado"
-                                ? "text-red-600 bg-red-50 border-red-200"
-                                : v === "Interesado"
-                                  ? "text-violet-700 bg-violet-50 border-violet-200"
-                                  : "text-sky-700 bg-sky-50 border-sky-200";
-                          const displayLabel =
-                            v === "Inscrito"
-                              ? "Matriculado"
-                              : v === "No Interesado"
-                                ? "No Interesado"
-                                : v;
-                          return (
-                            <span
-                              className={`px-2 py-1.5 w-full text-center rounded-lg text-[8px] font-black uppercase shadow-sm border ${c}`}
-                            >
-                              {displayLabel}
-                            </span>
-                          );
-                        }}
-                      />
+                      <div className="flex items-center gap-1 w-full justify-center">
+                        {/* Selector de Estado */}
+                        <div className="flex-1 min-w-0">
+                          <AccordionSelect
+                            value={lead.estado}
+                            isOpen={openDropdownId === lead.id + "st"}
+                            onToggle={() =>
+                              setOpenDropdownId(
+                                openDropdownId === lead.id + "st"
+                                  ? null
+                                  : lead.id + "st",
+                              )
+                            }
+                            options={[
+                              { value: "Agendado", label: "Agendado" },
+                              { value: "Interesado", label: "Interesado" },
+                              { value: "Inscrito", label: "Matriculado" },
+                              {
+                                value: "No Interesado",
+                                label: "No Interesado",
+                              },
+                            ]}
+                            onChange={(v) => onUpdateLead(lead.id, "estado", v)}
+                            renderBadge={(v) => {
+                              const c =
+                                v === "Inscrito"
+                                  ? "text-emerald-700 bg-emerald-100 border-emerald-200"
+                                  : v === "No Interesado"
+                                    ? "text-red-600 bg-red-50 border-red-200"
+                                    : v === "Interesado"
+                                      ? "text-violet-700 bg-violet-50 border-violet-200"
+                                      : "text-sky-700 bg-sky-50 border-sky-200";
+                              const displayLabel =
+                                v === "Inscrito"
+                                  ? "Matriculado"
+                                  : v === "No Interesado"
+                                    ? "No Interesado"
+                                    : v;
+                              return (
+                                <span
+                                  className={`px-1 flex items-center justify-center h-[24px] w-full text-center rounded-lg text-[7.5px] font-black uppercase shadow-sm border truncate ${c}`}
+                                >
+                                  {displayLabel}
+                                </span>
+                              );
+                            }}
+                          />
+                        </div>
 
-                      {(lead.estado === "Agendado" ||
-                        lead.estado === "Interesado") && (
-                        <AccordionSelect
-                          compact={true}
-                          value={lead.temperatura || "Tibio"}
-                          isOpen={openDropdownId === lead.id + "temp"}
-                          onToggle={() =>
-                            setOpenDropdownId(
-                              openDropdownId === lead.id + "temp"
-                                ? null
-                                : lead.id + "temp",
-                            )
-                          }
-                          options={[
-                            { value: "Frío", label: "❄️ Frío" },
-                            { value: "Tibio", label: "☀️ Tibio" },
-                            { value: "Caliente", label: "🔥 Alto" },
-                          ]}
-                          onChange={(v) =>
-                            onUpdateLead(lead.id, "temperatura", v)
-                          }
-                          renderBadge={(v) => {
-                            let color =
-                              "text-amber-600 bg-amber-50 border-amber-200";
-                            let icon = "☀️";
-                            if (v === "Caliente") {
-                              color =
-                                "text-orange-600 bg-orange-50 border-orange-200";
-                              icon = "🔥";
-                            }
-                            if (v === "Frío") {
-                              color =
-                                "text-blue-600 bg-blue-50 border-blue-200";
-                              icon = "❄️";
-                            }
-                            return (
-                              <span
-                                className={`px-2 py-1 w-[80px] justify-center rounded-lg border text-[7.5px] font-black uppercase shadow-sm flex items-center gap-1 ${color}`}
-                              >
-                                <span>{icon}</span> {v}
-                              </span>
-                            );
-                          }}
-                        />
-                      )}
+                        {/* Selector de Temperatura (Solo Ícono) */}
+                        {(lead.estado === "Agendado" ||
+                          lead.estado === "Interesado") && (
+                          <div className="w-[24px] shrink-0">
+                            <AccordionSelect
+                              compact={true}
+                              value={lead.temperatura || "Tibio"}
+                              isOpen={openDropdownId === lead.id + "temp"}
+                              onToggle={() =>
+                                setOpenDropdownId(
+                                  openDropdownId === lead.id + "temp"
+                                    ? null
+                                    : lead.id + "temp",
+                                )
+                              }
+                              options={[
+                                { value: "Frío", label: "❄️ Frío" },
+                                { value: "Tibio", label: "☀️ Tibio" },
+                                { value: "Caliente", label: "🔥 Alto" },
+                              ]}
+                              onChange={(v) =>
+                                onUpdateLead(lead.id, "temperatura", v)
+                              }
+                              renderBadge={(v) => {
+                                let colorClass =
+                                  "bg-amber-50 text-amber-500 border-amber-200";
+                                let icon = "☀️";
+                                if (v === "Caliente") {
+                                  colorClass =
+                                    "bg-orange-50 text-orange-500 border-orange-200";
+                                  icon = "🔥";
+                                }
+                                if (v === "Frío") {
+                                  colorClass =
+                                    "bg-sky-50 text-sky-500 border-sky-200";
+                                  icon = "❄️";
+                                }
+                                return (
+                                  <div
+                                    className={`w-full h-[24px] flex items-center justify-center rounded-lg border shadow-sm cursor-pointer hover:brightness-95 transition-all ${colorClass}`}
+                                    title={`Temperatura: ${v}`}
+                                  >
+                                    <span className="text-[10px] leading-none">
+                                      {icon}
+                                    </span>
+                                  </div>
+                                );
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </td>
 
