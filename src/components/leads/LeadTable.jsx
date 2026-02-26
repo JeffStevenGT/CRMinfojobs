@@ -8,15 +8,21 @@ const ElegantDatePicker = ({
   colorClass = "sky",
 }) => {
   const inputRef = useRef(null);
-  const handleContainerClick = () => {
+  const handleContainerClick = (e) => {
+    e.stopPropagation();
     if (inputRef.current) {
-      if (inputRef.current.showPicker) inputRef.current.showPicker();
-      else {
-        inputRef.current.focus();
-        inputRef.current.click();
+      try {
+        if (typeof inputRef.current.showPicker === "function") {
+          inputRef.current.showPicker();
+        } else {
+          inputRef.current.focus();
+        }
+      } catch (err) {
+        console.error("El navegador bloqueó la apertura del calendario", err);
       }
     }
   };
+
   const displayDate = () => {
     if (!value) return "---";
     const d = new Date(value);
@@ -30,6 +36,7 @@ const ElegantDatePicker = ({
         })
       : d.toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
   };
+
   return (
     <div
       onClick={handleContainerClick}
@@ -41,8 +48,8 @@ const ElegantDatePicker = ({
         type={type}
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
-        className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer"
-        onClick={(e) => e.stopPropagation()}
+        className="absolute bottom-0 left-0 w-0 h-0 opacity-0 pointer-events-none"
+        tabIndex={-1}
       />
     </div>
   );
@@ -102,6 +109,7 @@ export default function LeadTable({
 }) {
   const [copiedId, setCopiedId] = useState(null);
   const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [estadoFilter, setEstadoFilter] = useState("Todos");
 
   const handleCopy = (id, text, type) => {
     const val = type === "tel" ? "+34" + text.replace(/\s+/g, "") : text;
@@ -113,12 +121,68 @@ export default function LeadTable({
   const capsuleStyle =
     "bg-white/60 backdrop-blur-sm hover:bg-white/95 transition-all duration-300 rounded-xl px-2.5 py-1.5 border border-white/60 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex flex-col h-full w-full relative justify-center";
 
+  // --- NUEVA LÓGICA DE FILTROS INDEPENDIENTES ---
+  const filtros = [
+    { id: "Todos", label: "Todos", icon: "📋" },
+    { id: "Agendado", label: "Agendados", icon: "📞" },
+    { id: "Interesado", label: "Interesados", icon: "📝" },
+    { id: "Registrado", label: "Registrados", icon: "🪪" },
+    { id: "Inscrito", label: "Matriculados", icon: "⏳" },
+    { id: "No Apto", label: "No Aptos", icon: "🚫" },
+    { id: "No Interesado", label: "No Interesados", icon: "🛑" },
+  ];
+
+  // Aplicación inteligente del filtro sin romper tu base de datos
+  const leadsFiltrados = leads.filter((l) => {
+    if (estadoFilter === "Todos") return true;
+    if (estadoFilter === "No Apto")
+      return l.estado === "Inscrito" && l.status === "no apto";
+    // Si filtramos por Matriculados, excluimos a los No Aptos para que no se dupliquen
+    if (estadoFilter === "Inscrito")
+      return l.estado === "Inscrito" && l.status !== "no apto";
+    return l.estado === estadoFilter;
+  });
+
   return (
     <div
-      className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden"
+      className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col h-full animate-in fade-in duration-300"
       onClick={() => setOpenDropdownId(null)}
     >
-      <div className="overflow-x-auto custom-scrollbar pb-32 p-2">
+      <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2 overflow-x-auto custom-scrollbar bg-slate-50/50 z-20 shrink-0">
+        {filtros.map((f) => {
+          // Conteo inteligente para cada categoría
+          let count = 0;
+          if (f.id === "Todos") count = leads.length;
+          else if (f.id === "No Apto")
+            count = leads.filter(
+              (l) => l.estado === "Inscrito" && l.status === "no apto",
+            ).length;
+          else if (f.id === "Inscrito")
+            count = leads.filter(
+              (l) => l.estado === "Inscrito" && l.status !== "no apto",
+            ).length;
+          else count = leads.filter((l) => l.estado === f.id).length;
+
+          const isActive = estadoFilter === f.id;
+          return (
+            <button
+              key={f.id}
+              onClick={() => setEstadoFilter(f.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap shadow-sm border ${isActive ? "bg-indigo-600 text-white border-indigo-500" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-indigo-600"}`}
+            >
+              <span>{f.icon}</span>
+              {f.label}
+              <span
+                className={`px-1.5 py-0.5 rounded-md text-[7px] ${isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-400"}`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="overflow-x-auto custom-scrollbar pb-32 p-2 flex-1">
         <table className="min-w-full text-left border-separate border-spacing-y-1.5">
           <thead className="bg-transparent">
             <tr className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">
@@ -132,7 +196,7 @@ export default function LeadTable({
             </tr>
           </thead>
           <tbody>
-            {leads.map((lead) => {
+            {leadsFiltrados.map((lead) => {
               const asistencias = (lead.asistencia || []).filter(
                 (d) => d,
               ).length;
@@ -171,7 +235,6 @@ export default function LeadTable({
                   key={lead.id}
                   className={`group border-l-4 rounded-xl ${rowColorClass} ${borderColor} relative ${isRowActive ? "z-50" : "z-0"}`}
                 >
-                  {/* CLIENTE */}
                   <td className="p-0.5 align-top min-w-[200px]">
                     <div
                       className={`${capsuleStyle} justify-start items-start ${isRowActive ? "z-50" : "z-0"}`}
@@ -252,7 +315,6 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* CONTACTO */}
                   <td className="p-0.5 align-top min-w-[140px]">
                     <div
                       className={`${capsuleStyle} justify-center items-start gap-1.5 ${isRowActive ? "z-50" : "z-0"}`}
@@ -338,7 +400,6 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* ESTADO Y TEMPERATURA */}
                   <td className="p-0.5 align-top w-[120px]">
                     <div
                       className={`${capsuleStyle} justify-center items-center ${isRowActive ? "z-50" : "z-0"}`}
@@ -448,7 +509,6 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* ESTATUS */}
                   <td className="p-0.5 align-top w-[110px]">
                     <div
                       className={`${capsuleStyle} justify-center items-center ${isRowActive ? "z-50" : "z-0"}`}
@@ -510,7 +570,6 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* FLUJO OPERATIVO */}
                   <td className="p-0.5 align-top w-[130px]">
                     <div
                       className={`${capsuleStyle} justify-center items-center gap-1.5 ${isRowActive ? "z-50" : "z-0"}`}
@@ -590,7 +649,6 @@ export default function LeadTable({
                         </div>
                       )}
 
-                      {/* --- ACTUALIZACIÓN: REGISTRADO O PENDIENTE CON DOCS Y ACCESOS --- */}
                       {(lead.estado === "Registrado" ||
                         (lead.estado === "Inscrito" &&
                           lead.status === "pendiente")) && (
@@ -631,7 +689,6 @@ export default function LeadTable({
                             </button>
                           </div>
 
-                          {/* Botón de control de accesos (Solo para Pendientes) */}
                           {lead.estado === "Inscrito" &&
                             lead.status === "pendiente" && (
                               <button
@@ -701,7 +758,6 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* OBS Y ACCIONES */}
                   <td className="p-0.5 align-top w-[60px]">
                     <div
                       className={`${capsuleStyle} justify-center items-center ${isRowActive ? "z-50" : "z-0"}`}
@@ -775,6 +831,17 @@ export default function LeadTable({
                 </tr>
               );
             })}
+
+            {leadsFiltrados.length === 0 && (
+              <tr>
+                <td
+                  colSpan="7"
+                  className="p-8 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]"
+                >
+                  No hay clientes en esta categoría
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
