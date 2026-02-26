@@ -11,7 +11,7 @@ export default function ReportsView({ leads }) {
     ...new Set(
       leads
         .filter((l) => l.status === "finalizado" && l.fechaFinClase)
-        .map((l) => l.fechaFinClase.slice(0, 7)), // '2026-02-15' -> '2026-02'
+        .map((l) => l.fechaFinClase.slice(0, 7)),
     ),
   ]
     .sort()
@@ -73,7 +73,7 @@ export default function ReportsView({ leads }) {
     ? Math.min((puntosTotales / siguienteTramoPts) * 100, 100)
     : 100;
 
-  // FUNCIONES DE FECHAS PARA N+1
+  // FUNCIONES DE FECHAS
   const formatearMes = (yyyyMM) => {
     const [y, m] = yyyyMM.split("-");
     return new Date(y, m - 1)
@@ -81,11 +81,18 @@ export default function ReportsView({ leads }) {
       .toUpperCase();
   };
 
+  // NUEVA LÓGICA: Calcula el ÚLTIMO DÍA del mes N+1
   const formatearMesPagoN1 = (yyyyMM) => {
     const [y, m] = yyyyMM.split("-");
-    // Sumar 1 al mes para el N+1
-    return new Date(y, m)
-      .toLocaleDateString("es-ES", { month: "long", year: "numeric" })
+    // Al pedir el día "0" del mes (m + 1), JS nos devuelve el último día del mes N+1
+    const fechaPago = new Date(y, parseInt(m) + 1, 0);
+
+    return fechaPago
+      .toLocaleDateString("es-ES", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
       .toUpperCase();
   };
 
@@ -200,8 +207,8 @@ export default function ReportsView({ leads }) {
               })}
             </h3>
           </div>
-          <p className="text-[8.5px] font-black text-emerald-100 bg-emerald-600/50 px-2 py-1 rounded-md inline-block w-max mt-3 relative z-10 tracking-widest uppercase">
-            Pago (N+1): {formatearMesPagoN1(mesSeleccionado)}
+          <p className="text-[8.5px] font-black text-emerald-100 bg-emerald-600/50 px-2 py-1.5 rounded-md inline-block w-max mt-3 relative z-10 tracking-widest uppercase shadow-sm">
+            Pago: {formatearMesPagoN1(mesSeleccionado)}
           </p>
         </div>
       </div>
