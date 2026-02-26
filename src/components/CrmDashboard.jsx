@@ -27,9 +27,8 @@ export default function CrmDashboard() {
   const [leadToEdit, setLeadToEdit] = useState(null);
   const [leadToFollow, setLeadToFollow] = useState(null);
 
-  // ESTADOS DE VISTA Y FILTROS
   const [viewMode, setViewMode] = useState("table");
-  const [tableFilter, setTableFilter] = useState("todos"); // <-- NUEVO FILTRO PARA LA TABLA
+  const [tableFilter, setTableFilter] = useState("todos");
 
   const [finalizeModal, setFinalizeModal] = useState({
     open: false,
@@ -37,6 +36,7 @@ export default function CrmDashboard() {
     fechaInicio: "",
     fechaFin: "",
   });
+  const [manageModalLeadId, setManageModalLeadId] = useState(null); // NUEVO: Controla el Micro-Modal
   const [viewComment, setViewComment] = useState({
     open: false,
     text: "",
@@ -66,7 +66,15 @@ export default function CrmDashboard() {
   const handleUpdateLead = async (id, campo, valor) => {
     try {
       await updateDoc(doc(db, "leads", id), { [campo]: valor });
-      notify("Dato actualizado");
+      if (
+        campo !== "respondioWpp" &&
+        campo !== "doc1" &&
+        campo !== "doc2" &&
+        campo !== "tieneUsuarios" &&
+        campo !== "regalo"
+      ) {
+        notify("Dato actualizado");
+      }
     } catch (e) {
       notify("Error de red", "error");
     }
@@ -132,30 +140,23 @@ export default function CrmDashboard() {
     }
   };
 
-  // LOGICA DE FILTRADO COMBINADO (Buscador + Pestañas de Tabla)
   const filteredLeads = leadsCLM
     .filter((l) => {
-      // 1. Buscador de texto
       const b = searchTerm.toLowerCase();
       const matchText =
         l.nombre?.toLowerCase().includes(b) ||
         l.whatsapp?.includes(searchTerm) ||
         l.quienRefirio?.toLowerCase().includes(b);
       if (!matchText) return false;
-
-      // 2. Filtro de Pestañas (Solo aplica si estamos en vista de tabla)
       if (viewMode === "kanban" || tableFilter === "todos") return true;
-
-      if (tableFilter === "prospectos") {
+      if (tableFilter === "prospectos")
         return l.estado === "Agendado" || l.estado === "Interesado";
-      }
-      if (tableFilter === "activos") {
+      if (tableFilter === "activos")
         return (
           l.estado === "Inscrito" &&
           (l.status === "en curso" || l.status === "pendiente")
         );
-      }
-      if (tableFilter === "historico") {
+      if (tableFilter === "historico")
         return (
           l.estado === "No Interesado" ||
           (l.estado === "Inscrito" &&
@@ -163,7 +164,6 @@ export default function CrmDashboard() {
               l.status === "no apto" ||
               l.status === "abandonado"))
         );
-      }
       return true;
     })
     .sort((a, b) => {
@@ -172,7 +172,6 @@ export default function CrmDashboard() {
       return dateB - dateA;
     });
 
-  // Contadores para las pestañas
   const countProspectos = leadsCLM.filter(
     (l) => l.estado === "Agendado" || l.estado === "Interesado",
   ).length;
@@ -218,7 +217,6 @@ export default function CrmDashboard() {
         <div className="flex-1 overflow-auto p-8 custom-scrollbar">
           {activeTab === "clientes-clm" && (
             <div className="max-w-[1600px] mx-auto space-y-4 flex flex-col h-full">
-              {/* CABECERA PRINCIPAL Y BOTONES DE VISTA */}
               <div className="flex justify-between items-end px-2">
                 <div>
                   <h1 className="text-xl font-black text-slate-800 uppercase tracking-widest italic">
@@ -253,7 +251,6 @@ export default function CrmDashboard() {
                 </div>
               </div>
 
-              {/* NUEVO: SUB-NAVEGACIÓN (PESTAÑAS) SOLO PARA LA VISTA DE TABLA */}
               {viewMode === "table" && (
                 <div className="flex items-center gap-2 px-2 mt-2">
                   <button
@@ -303,7 +300,6 @@ export default function CrmDashboard() {
                 </div>
               )}
 
-              {/* ÁREA DE TRABAJO (RENDERIZA TABLA O KANBAN) */}
               <div className="flex-1 min-h-0 pt-2">
                 {viewMode === "table" ? (
                   <LeadTable
@@ -329,6 +325,7 @@ export default function CrmDashboard() {
                         fechaFin: "",
                       })
                     }
+                    onManageLead={(lead) => setManageModalLeadId(lead.id)} // ABRE EL MICRO-MODAL
                   />
                 ) : (
                   <KanbanView
@@ -371,7 +368,214 @@ export default function CrmDashboard() {
         </div>
       </main>
 
-      {/* MODAL FINALIZAR CURSO */}
+      {/* ----------------------------------------------------- */}
+      {/* NUEVO MICRO-MODAL: PANEL OPERATIVO (SOLO INSCRITOS)   */}
+      {/* ----------------------------------------------------- */}
+      {manageModalLeadId &&
+        (() => {
+          const activeLead = leadsCLM.find((l) => l.id === manageModalLeadId);
+          if (!activeLead) return null;
+          return (
+            <div
+              className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+              onClick={() => setManageModalLeadId(null)}
+            >
+              <div
+                className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="bg-[#4F46E5] p-5 text-center text-white relative">
+                  <h3 className="text-[14px] font-black uppercase tracking-widest mb-0.5">
+                    Panel Operativo
+                  </h3>
+                  <p className="text-[10px] font-bold opacity-80 uppercase">
+                    {activeLead.nombre}
+                  </p>
+                  <button
+                    onClick={() => setManageModalLeadId(null)}
+                    className="absolute right-4 top-4 opacity-70 hover:opacity-100"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="p-6 space-y-6">
+                  {/* FECHAS */}
+                  <div className="space-y-3">
+                    <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b pb-1">
+                      Fechas del Curso
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[8px] font-bold text-slate-500 uppercase">
+                          Inicio de Clase
+                        </label>
+                        <input
+                          type="date"
+                          value={activeLead.inicioClase || ""}
+                          onChange={(e) =>
+                            handleUpdateLead(
+                              activeLead.id,
+                              "inicioClase",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full mt-1 px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-indigo-600 outline-none hover:bg-slate-100 focus:bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[8px] font-bold text-slate-500 uppercase">
+                          Finalización
+                        </label>
+                        <input
+                          type="date"
+                          value={activeLead.fechaFinClase || ""}
+                          onChange={(e) =>
+                            handleUpdateLead(
+                              activeLead.id,
+                              "fechaFinClase",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full mt-1 px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-emerald-600 outline-none hover:bg-slate-100 focus:bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* DOCUMENTOS */}
+                  <div className="space-y-3">
+                    <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b pb-1">
+                      Documentación
+                    </h4>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() =>
+                          handleUpdateLead(
+                            activeLead.id,
+                            "doc1",
+                            !activeLead.doc1,
+                          )
+                        }
+                        className={`flex-1 py-2 rounded-xl border text-[10px] font-black transition-all flex justify-center items-center gap-1.5 ${activeLead.doc1 ? "bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
+                      >
+                        <div
+                          className={`w-3 h-3 rounded-[3px] flex items-center justify-center border ${activeLead.doc1 ? "bg-emerald-500 border-emerald-500" : "bg-white border-slate-300"}`}
+                        >
+                          {activeLead.doc1 && (
+                            <svg
+                              className="w-2 h-2 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={4}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                        {activeLead.situacion === "Autonomo" ? "REC" : "NOM"}
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleUpdateLead(
+                            activeLead.id,
+                            "doc2",
+                            !activeLead.doc2,
+                          )
+                        }
+                        className={`flex-1 py-2 rounded-xl border text-[10px] font-black transition-all flex justify-center items-center gap-1.5 ${activeLead.doc2 ? "bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
+                      >
+                        <div
+                          className={`w-3 h-3 rounded-[3px] flex items-center justify-center border ${activeLead.doc2 ? "bg-emerald-500 border-emerald-500" : "bg-white border-slate-300"}`}
+                        >
+                          {activeLead.doc2 && (
+                            <svg
+                              className="w-2 h-2 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={4}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                        {activeLead.situacion === "Autonomo" ? "IAE" : "CON"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* ACCESOS Y REGALO */}
+                  <div className="space-y-3">
+                    <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b pb-1">
+                      Entregables
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() =>
+                          handleUpdateLead(
+                            activeLead.id,
+                            "tieneUsuarios",
+                            !activeLead.tieneUsuarios,
+                          )
+                        }
+                        className={`w-full py-2 rounded-xl border text-[10px] font-black transition-all flex justify-center items-center gap-1.5 shadow-sm active:scale-95 ${activeLead.tieneUsuarios ? "bg-sky-500 text-white border-sky-600" : "bg-white text-slate-400 border-slate-200 hover:bg-slate-50"}`}
+                      >
+                        🔑 ACCESOS {activeLead.tieneUsuarios ? "OK" : "PND"}
+                      </button>
+                      <select
+                        value={activeLead.regalo || "no"}
+                        onChange={(e) =>
+                          handleUpdateLead(
+                            activeLead.id,
+                            "regalo",
+                            e.target.value,
+                          )
+                        }
+                        className={`w-full px-2 py-2 border rounded-xl text-[10px] font-black uppercase outline-none text-center shadow-sm cursor-pointer transition-colors ${activeLead.regalo === "si" ? "bg-purple-500 text-white border-purple-600" : "bg-white text-slate-400 border-slate-200 hover:bg-slate-50"}`}
+                      >
+                        <option value="no">🎁 Regalo Pendiente</option>
+                        <option value="si">🎁 Regalo Entregado</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-slate-50 flex justify-center border-t border-slate-100">
+                  <button
+                    onClick={() => setManageModalLeadId(null)}
+                    className="w-full bg-slate-800 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-700 transition-colors active:scale-95 shadow-md"
+                  >
+                    Listo
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+      {/* MODAL FINALIZAR (Se mantiene igual) */}
       {finalizeModal.open && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl p-6 border border-slate-100">

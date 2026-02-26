@@ -90,38 +90,6 @@ const AccordionSelect = ({
   </div>
 );
 
-const CheckboxItem = ({ checked, label, onChange }) => (
-  <div
-    onClick={() => onChange(!checked)}
-    className="flex items-center gap-1.5 cursor-pointer group py-0.5"
-  >
-    <div
-      className={`w-3 h-3 rounded-[3px] border flex items-center justify-center transition-all ${checked ? "bg-emerald-500 border-emerald-500" : "bg-white border-slate-300 group-hover:border-indigo-400"}`}
-    >
-      {checked && (
-        <svg
-          className="w-2 h-2 text-white"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={5}
-            d="M5 13l4 4L19 7"
-          />
-        </svg>
-      )}
-    </div>
-    <span
-      className={`text-[8px] font-bold uppercase ${checked ? "text-emerald-700 opacity-50 line-through" : "text-slate-500"}`}
-    >
-      {label}
-    </span>
-  </div>
-);
-
 export default function LeadTable({
   leads,
   onUpdateLead,
@@ -130,6 +98,7 @@ export default function LeadTable({
   onDeleteLead,
   onViewComment,
   onFinalize,
+  onManageLead,
 }) {
   const [copiedId, setCopiedId] = useState(null);
   const [openDropdownId, setOpenDropdownId] = useState(null);
@@ -153,15 +122,10 @@ export default function LeadTable({
               <th className="px-4 py-4 text-left">Cliente</th>
               <th className="px-4 py-4 text-left">Contacto</th>
               <th className="px-2 py-4">Estado</th>
-              <th className="px-2 py-4">Turno/Cita</th>
-              <th className="px-2 py-4">Docs</th>
-              <th className="px-2 py-4">Fechas</th>{" "}
-              {/* Actualizado visualmente */}
-              <th className="px-2 py-4">User</th>
-              <th className="px-2 py-4">Asistencia</th>
-              <th className="px-2 py-4">Regalo</th>
-              <th className="px-2 py-4">Obs.</th>
               <th className="px-2 py-4">Estatus</th>
+              {/* COLUMNA INTELIGENTE UNIFICADA */}
+              <th className="px-2 py-4 text-indigo-500">Flujo Operativo</th>
+              <th className="px-2 py-4">Obs.</th>
               <th className="px-4 py-4">Acciones</th>
             </tr>
           </thead>
@@ -171,7 +135,7 @@ export default function LeadTable({
                 (d) => d,
               ).length;
               const nFaltas = 20 - asistencias;
-              const isReferido = String(lead.esReferido).toLowerCase() === "si";
+              const isReferido = lead.esReferido === "si";
 
               let rowColorClass = "bg-white hover:bg-slate-50";
               let borderColor = "border-l-transparent";
@@ -264,7 +228,7 @@ export default function LeadTable({
                     </div>
                     {isReferido && lead.quienRefirio && (
                       <div className="text-[8px] text-indigo-600 italic font-medium mt-1 leading-tight">
-                        Recomendado por: {lead.quienRefirio}
+                        Rec: {lead.quienRefirio}
                       </div>
                     )}
                   </td>
@@ -307,7 +271,7 @@ export default function LeadTable({
                         title={
                           lead.respondioWpp
                             ? "Respondió WhatsApp"
-                            : "No respondió WhatsApp"
+                            : "No respondió"
                         }
                       >
                         <svg
@@ -324,7 +288,7 @@ export default function LeadTable({
                       onClick={() =>
                         lead.email && handleCopy(lead.id, lead.email, "mail")
                       }
-                      title={lead.email ? "Copiar email" : ""}
+                      title="Copiar email"
                     >
                       <span
                         className={`text-[9px] truncate max-w-[100px] ${lead.email ? "text-slate-500" : "text-slate-300 italic tracking-tight"}`}
@@ -435,166 +399,160 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* TURNO/CITA */}
+                  {/* ESTATUS CONDICIONAL (SOLO INSCRITOS) */}
                   <td className="px-2 py-3 text-center align-top">
-                    {lead.estado === "Agendado" ? (
-                      <ElegantDatePicker
-                        type="datetime-local"
-                        value={lead.fechaLlamada}
-                        onChange={(v) =>
-                          onUpdateLead(lead.id, "fechaLlamada", v)
-                        }
-                      />
-                    ) : lead.estado === "Inscrito" ||
-                      lead.estado === "Interesado" ? (
+                    {lead.estado === "Inscrito" ? (
                       <AccordionSelect
-                        value={lead.horario}
-                        isOpen={openDropdownId === lead.id + "hor"}
+                        value={lead.status || "en curso"}
+                        isOpen={openDropdownId === lead.id + "sts"}
                         onToggle={() =>
                           setOpenDropdownId(
-                            openDropdownId === lead.id + "hor"
+                            openDropdownId === lead.id + "sts"
                               ? null
-                              : lead.id + "hor",
+                              : lead.id + "sts",
                           )
                         }
                         options={[
-                          { value: "mañana", label: "Mañana" },
-                          { value: "tarde", label: "Tarde" },
+                          { value: "en curso", label: "Curso" },
+                          { value: "pendiente", label: "Pendiente" },
+                          { value: "finalizado", label: "Fin" },
+                          { value: "abandonado", label: "Aband" },
+                          { value: "no apto", label: "No Apto" },
                         ]}
-                        onChange={(v) => onUpdateLead(lead.id, "horario", v)}
-                        renderBadge={(v) => (
-                          <span className="text-[8px] font-bold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-lg uppercase shadow-sm">
-                            {v || "S/T"}
-                          </span>
-                        )}
+                        onChange={(v) => {
+                          if (v === "finalizado") {
+                            onFinalize(lead);
+                          } else {
+                            onUpdateLead(lead.id, "status", v);
+                          }
+                        }}
+                        renderBadge={(v) => {
+                          let badgeClass =
+                            "bg-blue-500 text-white border-blue-600";
+                          if (v === "finalizado")
+                            badgeClass =
+                              "bg-emerald-500 text-white border-emerald-600";
+                          if (v === "abandonado")
+                            badgeClass =
+                              "bg-orange-500 text-white border-orange-600";
+                          if (v === "no apto")
+                            badgeClass =
+                              "bg-rose-600 text-white border-rose-700 animate-pulse";
+                          if (v === "pendiente")
+                            badgeClass =
+                              "bg-slate-500 text-white border-slate-600";
+                          return (
+                            <span
+                              className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase shadow-md border ${badgeClass}`}
+                            >
+                              {v}
+                            </span>
+                          );
+                        }}
                       />
-                    ) : (
-                      "---"
-                    )}
-                  </td>
-
-                  {/* DOCS */}
-                  <td className="px-2 py-3 align-top">
-                    {lead.estado === "Inscrito" ||
-                    lead.estado === "Interesado" ? (
-                      <div className="bg-white/60 p-1.5 rounded-xl border border-slate-200 flex flex-col gap-1 shadow-sm">
-                        <CheckboxItem
-                          checked={lead.doc1}
-                          label={lead.situacion === "Autonomo" ? "REC" : "NOM"}
-                          onChange={(v) => onUpdateLead(lead.id, "doc1", v)}
-                        />
-                        <CheckboxItem
-                          checked={lead.doc2}
-                          label={lead.situacion === "Autonomo" ? "IAE" : "CON"}
-                          onChange={(v) => onUpdateLead(lead.id, "doc2", v)}
-                        />
-                      </div>
-                    ) : (
-                      <div className="text-center text-slate-300">---</div>
-                    )}
-                  </td>
-
-                  {/* INICIO Y FIN (AQUÍ SE MUESTRA LA FECHA DE FINALIZACIÓN) */}
-                  <td className="px-2 py-3 text-center align-top">
-                    {lead.estado === "Inscrito" ? (
-                      <div className="flex flex-col items-center gap-1.5">
-                        <ElegantDatePicker
-                          type="date"
-                          colorClass="indigo"
-                          value={lead.inicioClase}
-                          onChange={(v) =>
-                            onUpdateLead(lead.id, "inicioClase", v)
-                          }
-                        />
-                        {lead.status === "finalizado" && lead.fechaFinClase && (
-                          <span
-                            className="text-[7px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded shadow-sm border border-emerald-100 flex items-center gap-1"
-                            title="Fecha de Finalización"
-                          >
-                            <span>✓</span>{" "}
-                            {new Date(lead.fechaFinClase).toLocaleDateString(
-                              "es-ES",
-                              { day: "2-digit", month: "short" },
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      "---"
-                    )}
-                  </td>
-
-                  {/* USER */}
-                  <td className="px-2 py-3 text-center align-top">
-                    {lead.estado === "Inscrito" && (
-                      <div className="flex justify-center">
-                        <CheckboxItem
-                          checked={lead.tieneUsuarios}
-                          label={lead.tieneUsuarios ? "OK" : "PND"}
-                          onChange={(v) =>
-                            onUpdateLead(lead.id, "tieneUsuarios", v)
-                          }
-                        />
-                      </div>
-                    )}
-                  </td>
-
-                  {/* ASISTENCIA */}
-                  <td className="px-2 py-3 text-center align-top">
-                    {lead.estado === "Inscrito" ? (
-                      <button
-                        onClick={() => onFollowUp(lead)}
-                        className={`group flex items-center justify-center gap-1.5 mx-auto px-2 py-1.5 rounded-lg border shadow-sm transition-all active:scale-95 ${nFaltas >= 3 ? "bg-rose-500 border-rose-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-300"}`}
-                      >
-                        <span className="text-[10px] font-black">
-                          {nFaltas}F
-                        </span>
-                        <svg
-                          className={`w-3 h-3 ${nFaltas >= 3 ? "opacity-100" : "opacity-50 group-hover:opacity-100"}`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2.5}
-                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-                          />
-                        </svg>
-                      </button>
                     ) : (
                       <span className="text-slate-300 text-[10px]">---</span>
                     )}
                   </td>
 
-                  {/* REGALO */}
+                  {/* COLUMNA INTELIGENTE: FLUJO OPERATIVO */}
                   <td className="px-2 py-3 text-center align-top">
-                    {lead.estado === "Inscrito" ? (
-                      <AccordionSelect
-                        value={lead.regalo || "no"}
-                        isOpen={openDropdownId === lead.id + "reg"}
-                        onToggle={() =>
-                          setOpenDropdownId(
-                            openDropdownId === lead.id + "reg"
-                              ? null
-                              : lead.id + "reg",
-                          )
-                        }
-                        options={[
-                          { value: "si", label: "Entregado" },
-                          { value: "no", label: "Pendiente" },
-                        ]}
-                        onChange={(v) => onUpdateLead(lead.id, "regalo", v)}
-                        renderBadge={(v) => (
-                          <span
-                            className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 shadow-sm ${v === "si" ? "bg-purple-500 text-white border border-purple-600" : "bg-white text-slate-400 border border-slate-200"}`}
+                    {lead.estado === "Agendado" && (
+                      <div className="flex flex-col items-center gap-1.5">
+                        <span className="text-[6.5px] font-black text-slate-400 uppercase tracking-widest">
+                          Cita Llamada:
+                        </span>
+                        <ElegantDatePicker
+                          type="datetime-local"
+                          value={lead.fechaLlamada}
+                          onChange={(v) =>
+                            onUpdateLead(lead.id, "fechaLlamada", v)
+                          }
+                        />
+                      </div>
+                    )}
+
+                    {lead.estado === "Interesado" && (
+                      <div className="flex flex-col items-center gap-1.5">
+                        <span className="text-[6.5px] font-black text-slate-400 uppercase tracking-widest">
+                          Turno Curso:
+                        </span>
+                        <AccordionSelect
+                          compact={true}
+                          value={lead.horario}
+                          isOpen={openDropdownId === lead.id + "hor"}
+                          onToggle={() =>
+                            setOpenDropdownId(
+                              openDropdownId === lead.id + "hor"
+                                ? null
+                                : lead.id + "hor",
+                            )
+                          }
+                          options={[
+                            { value: "mañana", label: "Mañana" },
+                            { value: "tarde", label: "Tarde" },
+                          ]}
+                          onChange={(v) => onUpdateLead(lead.id, "horario", v)}
+                          renderBadge={(v) => (
+                            <span className="text-[8px] font-bold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-lg uppercase shadow-sm">
+                              {v || "S/T"}
+                            </span>
+                          )}
+                        />
+                      </div>
+                    )}
+
+                    {lead.estado === "Inscrito" && (
+                      <div className="flex flex-col items-center gap-1.5">
+                        <button
+                          onClick={() => onManageLead(lead)}
+                          className="w-full max-w-[100px] bg-indigo-50 text-indigo-600 px-2 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border border-indigo-100 hover:bg-indigo-100 hover:border-indigo-200 transition-colors flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                        >
+                          <svg
+                            className="w-3 h-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
                           >
-                            {v === "si" ? "🎁 SÍ" : "NO"}
-                          </span>
-                        )}
-                      />
-                    ) : (
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                          </svg>
+                          Panel Alumno
+                        </button>
+
+                        {/* BOTÓN RÁPIDO DE ASISTENCIA */}
+                        <button
+                          onClick={() => onFollowUp(lead)}
+                          className={`w-full max-w-[100px] py-1.5 rounded-lg border text-[8px] font-black flex items-center justify-center gap-1 transition-all active:scale-95 shadow-sm ${nFaltas >= 3 ? "bg-rose-500 border-rose-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                        >
+                          <span className="text-[10px]">{nFaltas}F</span>
+                          <svg
+                            className={`w-3 h-3 ${nFaltas >= 3 ? "opacity-100" : "opacity-50"}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                    {lead.estado === "No Interesado" && (
                       <span className="text-slate-300 text-[10px]">---</span>
                     )}
                   </td>
@@ -624,60 +582,6 @@ export default function LeadTable({
                       </button>
                     ) : (
                       <span className="text-slate-200">-</span>
-                    )}
-                  </td>
-
-                  {/* ESTATUS CONDICIONAL (AHORA INTERCEPTA EL FINALIZADO) */}
-                  <td className="px-2 py-3 text-center align-top">
-                    {lead.estado === "Inscrito" && (
-                      <AccordionSelect
-                        value={lead.status || "en curso"}
-                        isOpen={openDropdownId === lead.id + "sts"}
-                        onToggle={() =>
-                          setOpenDropdownId(
-                            openDropdownId === lead.id + "sts"
-                              ? null
-                              : lead.id + "sts",
-                          )
-                        }
-                        options={[
-                          { value: "en curso", label: "Curso" },
-                          { value: "pendiente", label: "Pendiente" },
-                          { value: "finalizado", label: "Fin" },
-                          { value: "abandonado", label: "Aband" },
-                          { value: "no apto", label: "No Apto" },
-                        ]}
-                        onChange={(v) => {
-                          if (v === "finalizado") {
-                            onFinalize(lead); // ABRE MODAL
-                          } else {
-                            onUpdateLead(lead.id, "status", v); // ACTUALIZA DIRECTO
-                          }
-                        }}
-                        renderBadge={(v) => {
-                          let badgeClass =
-                            "bg-blue-500 text-white border-blue-600";
-                          if (v === "finalizado")
-                            badgeClass =
-                              "bg-emerald-500 text-white border-emerald-600";
-                          if (v === "abandonado")
-                            badgeClass =
-                              "bg-orange-500 text-white border-orange-600";
-                          if (v === "no apto")
-                            badgeClass =
-                              "bg-rose-600 text-white border-rose-700 animate-pulse";
-                          if (v === "pendiente")
-                            badgeClass =
-                              "bg-slate-500 text-white border-slate-600";
-                          return (
-                            <span
-                              className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase shadow-md border ${badgeClass}`}
-                            >
-                              {v}
-                            </span>
-                          );
-                        }}
-                      />
                     )}
                   </td>
 
