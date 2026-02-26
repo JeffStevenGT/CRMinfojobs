@@ -66,7 +66,6 @@ export default function CrmDashboard() {
   const handleUpdateLead = async (id, campo, valor) => {
     try {
       await updateDoc(doc(db, "leads", id), { [campo]: valor });
-      // Evitamos notificaciones invasivas para los clics rápidos
       if (
         campo !== "respondioWpp" &&
         campo !== "doc1" &&
@@ -141,6 +140,7 @@ export default function CrmDashboard() {
     }
   };
 
+  // --- FILTRADO EXACTO A TUS ESTADOS ---
   const filteredLeads = leadsCLM
     .filter((l) => {
       const b = searchTerm.toLowerCase();
@@ -149,22 +149,23 @@ export default function CrmDashboard() {
         l.whatsapp?.includes(searchTerm) ||
         l.quienRefirio?.toLowerCase().includes(b);
       if (!matchText) return false;
+
       if (viewMode === "kanban" || tableFilter === "todos") return true;
-      if (tableFilter === "prospectos")
-        return l.estado === "Agendado" || l.estado === "Interesado";
-      if (tableFilter === "activos")
-        return (
-          l.estado === "Inscrito" &&
-          (l.status === "en curso" || l.status === "pendiente")
-        );
-      if (tableFilter === "historico")
+      if (tableFilter === "agendados") return l.estado === "Agendado";
+      if (tableFilter === "interesados") return l.estado === "Interesado";
+      if (tableFilter === "matriculados")
+        return l.estado === "Inscrito" && l.status === "pendiente";
+      if (tableFilter === "curso")
+        return l.estado === "Inscrito" && l.status === "en curso";
+      if (tableFilter === "finalizados")
+        return l.estado === "Inscrito" && l.status === "finalizado";
+      if (tableFilter === "perdidos")
         return (
           l.estado === "No Interesado" ||
           (l.estado === "Inscrito" &&
-            (l.status === "finalizado" ||
-              l.status === "no apto" ||
-              l.status === "abandonado"))
+            (l.status === "no apto" || l.status === "abandonado"))
         );
+
       return true;
     })
     .sort((a, b) => {
@@ -173,21 +174,25 @@ export default function CrmDashboard() {
       return dateB - dateA;
     });
 
-  const countProspectos = leadsCLM.filter(
-    (l) => l.estado === "Agendado" || l.estado === "Interesado",
+  // --- CONTADORES EXACTOS PARA LOS BOTONES ---
+  const countAgendados = leadsCLM.filter((l) => l.estado === "Agendado").length;
+  const countInteresados = leadsCLM.filter(
+    (l) => l.estado === "Interesado",
   ).length;
-  const countActivos = leadsCLM.filter(
-    (l) =>
-      l.estado === "Inscrito" &&
-      (l.status === "en curso" || l.status === "pendiente"),
+  const countMatriculados = leadsCLM.filter(
+    (l) => l.estado === "Inscrito" && l.status === "pendiente",
   ).length;
-  const countHistorico = leadsCLM.filter(
+  const countCurso = leadsCLM.filter(
+    (l) => l.estado === "Inscrito" && l.status === "en curso",
+  ).length;
+  const countFinalizados = leadsCLM.filter(
+    (l) => l.estado === "Inscrito" && l.status === "finalizado",
+  ).length;
+  const countPerdidos = leadsCLM.filter(
     (l) =>
       l.estado === "No Interesado" ||
       (l.estado === "Inscrito" &&
-        (l.status === "finalizado" ||
-          l.status === "no apto" ||
-          l.status === "abandonado")),
+        (l.status === "no apto" || l.status === "abandonado")),
   ).length;
 
   return (
@@ -253,11 +258,12 @@ export default function CrmDashboard() {
                 </div>
               </div>
 
+              {/* BARRA DE FILTROS ESPEJO DEL KANBAN */}
               {viewMode === "table" && (
-                <div className="flex items-center gap-2 px-2 mt-2">
+                <div className="flex items-center gap-2 px-2 mt-2 overflow-x-auto custom-scrollbar pb-1">
                   <button
                     onClick={() => setTableFilter("todos")}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${tableFilter === "todos" ? "bg-slate-800 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-50"}`}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${tableFilter === "todos" ? "bg-slate-800 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-50"}`}
                   >
                     📋 Todos{" "}
                     <span
@@ -266,43 +272,82 @@ export default function CrmDashboard() {
                       {leadsCLM.length}
                     </span>
                   </button>
+
                   <button
-                    onClick={() => setTableFilter("prospectos")}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${tableFilter === "prospectos" ? "bg-blue-500 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-blue-50"}`}
+                    onClick={() => setTableFilter("agendados")}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${tableFilter === "agendados" ? "bg-slate-500 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-50"}`}
                   >
-                    📞 Prospectos{" "}
+                    📞 Agendados{" "}
                     <span
-                      className={`px-1.5 py-0.5 rounded-md text-[8px] ${tableFilter === "prospectos" ? "bg-blue-400" : "bg-slate-100"}`}
+                      className={`px-1.5 py-0.5 rounded-md text-[8px] ${tableFilter === "agendados" ? "bg-slate-400" : "bg-slate-100"}`}
                     >
-                      {countProspectos}
+                      {countAgendados}
                     </span>
                   </button>
+
                   <button
-                    onClick={() => setTableFilter("activos")}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${tableFilter === "activos" ? "bg-indigo-500 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-indigo-50"}`}
+                    onClick={() => setTableFilter("interesados")}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${tableFilter === "interesados" ? "bg-blue-500 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-blue-50"}`}
                   >
-                    📚 Activos{" "}
+                    📝 Interesados{" "}
                     <span
-                      className={`px-1.5 py-0.5 rounded-md text-[8px] ${tableFilter === "activos" ? "bg-indigo-400" : "bg-slate-100"}`}
+                      className={`px-1.5 py-0.5 rounded-md text-[8px] ${tableFilter === "interesados" ? "bg-blue-400" : "bg-slate-100"}`}
                     >
-                      {countActivos}
+                      {countInteresados}
                     </span>
                   </button>
+
                   <button
-                    onClick={() => setTableFilter("historico")}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${tableFilter === "historico" ? "bg-slate-400 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-100"}`}
+                    onClick={() => setTableFilter("matriculados")}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${tableFilter === "matriculados" ? "bg-amber-500 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-amber-50"}`}
                   >
-                    🗄️ Histórico{" "}
+                    ⏳ Matriculados{" "}
                     <span
-                      className={`px-1.5 py-0.5 rounded-md text-[8px] ${tableFilter === "historico" ? "bg-slate-300" : "bg-slate-100"}`}
+                      className={`px-1.5 py-0.5 rounded-md text-[8px] ${tableFilter === "matriculados" ? "bg-amber-400" : "bg-slate-100"}`}
                     >
-                      {countHistorico}
+                      {countMatriculados}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setTableFilter("curso")}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${tableFilter === "curso" ? "bg-indigo-500 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-indigo-50"}`}
+                  >
+                    📚 En Curso{" "}
+                    <span
+                      className={`px-1.5 py-0.5 rounded-md text-[8px] ${tableFilter === "curso" ? "bg-indigo-400" : "bg-slate-100"}`}
+                    >
+                      {countCurso}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setTableFilter("finalizados")}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${tableFilter === "finalizados" ? "bg-emerald-500 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-emerald-50"}`}
+                  >
+                    🏆 Finalizados{" "}
+                    <span
+                      className={`px-1.5 py-0.5 rounded-md text-[8px] ${tableFilter === "finalizados" ? "bg-emerald-400" : "bg-slate-100"}`}
+                    >
+                      {countFinalizados}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setTableFilter("perdidos")}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${tableFilter === "perdidos" ? "bg-rose-500 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-rose-50"}`}
+                  >
+                    🛑 Bajas{" "}
+                    <span
+                      className={`px-1.5 py-0.5 rounded-md text-[8px] ${tableFilter === "perdidos" ? "bg-rose-400" : "bg-slate-100"}`}
+                    >
+                      {countPerdidos}
                     </span>
                   </button>
                 </div>
               )}
 
-              <div className="flex-1 min-h-0 pt-2">
+              <div className="flex-1 min-h-0 pt-1">
                 {viewMode === "table" ? (
                   <LeadTable
                     leads={filteredLeads}
@@ -574,7 +619,7 @@ export default function CrmDashboard() {
                     </div>
                   </div>
 
-                  {/* Tarjeta Interna: ENTREGABLES (AHORA SIMÉTRICO A DOCUMENTOS) */}
+                  {/* Tarjeta Interna: ENTREGABLES */}
                   <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100/60">
                     <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
                       <svg
