@@ -129,6 +129,7 @@ export default function LeadTable({
   onFollowUp,
   onDeleteLead,
   onViewComment,
+  onFinalize,
 }) {
   const [copiedId, setCopiedId] = useState(null);
   const [openDropdownId, setOpenDropdownId] = useState(null);
@@ -154,7 +155,8 @@ export default function LeadTable({
               <th className="px-2 py-4">Estado</th>
               <th className="px-2 py-4">Turno/Cita</th>
               <th className="px-2 py-4">Docs</th>
-              <th className="px-2 py-4">Inicio</th>
+              <th className="px-2 py-4">Fechas</th>{" "}
+              {/* Actualizado visualmente */}
               <th className="px-2 py-4">User</th>
               <th className="px-2 py-4">Asistencia</th>
               <th className="px-2 py-4">Regalo</th>
@@ -169,9 +171,8 @@ export default function LeadTable({
                 (d) => d,
               ).length;
               const nFaltas = 20 - asistencias;
-              const isReferido = lead.esReferido === "si";
+              const isReferido = String(lead.esReferido).toLowerCase() === "si";
 
-              // Colores condicionales
               let rowColorClass = "bg-white hover:bg-slate-50";
               let borderColor = "border-l-transparent";
               if (lead.estado === "Inscrito") {
@@ -198,7 +199,7 @@ export default function LeadTable({
                   key={lead.id}
                   className={`transition-colors group border-l-4 ${rowColorClass} ${borderColor}`}
                 >
-                  {/* CLIENTE - RESTAURADO A TU DISEÑO ORIGINAL */}
+                  {/* CLIENTE */}
                   <td className="px-4 py-3 min-w-[200px] align-top">
                     {lead.fechaCreacion && (
                       <div className="text-[6.5px] font-black text-slate-300 uppercase tracking-widest mb-1.5 flex items-center gap-1">
@@ -226,7 +227,6 @@ export default function LeadTable({
                         )}
                       </div>
                     )}
-
                     <div className="font-bold text-slate-800 text-[11px] flex items-center gap-1.5 flex-wrap uppercase">
                       <span>{lead.nombre}</span>
                       {isReferido && (
@@ -235,7 +235,6 @@ export default function LeadTable({
                         </span>
                       )}
                     </div>
-
                     <div className="flex items-center gap-1 mt-0.5 text-[8px] text-slate-500 font-bold uppercase tracking-wide">
                       <span>{lead.provincia || "S/P"}</span>
                       <span className="text-slate-400">•</span>
@@ -263,7 +262,6 @@ export default function LeadTable({
                         )}
                       />
                     </div>
-
                     {isReferido && lead.quienRefirio && (
                       <div className="text-[8px] text-indigo-600 italic font-medium mt-1 leading-tight">
                         Recomendado por: {lead.quienRefirio}
@@ -296,7 +294,6 @@ export default function LeadTable({
                           />
                         </svg>
                       </div>
-
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -322,7 +319,6 @@ export default function LeadTable({
                         </svg>
                       </button>
                     </div>
-
                     <div
                       className={`flex items-center gap-1.5 ${lead.email ? "group cursor-pointer" : ""}`}
                       onClick={() =>
@@ -498,17 +494,31 @@ export default function LeadTable({
                     )}
                   </td>
 
-                  {/* INICIO */}
+                  {/* INICIO Y FIN (AQUÍ SE MUESTRA LA FECHA DE FINALIZACIÓN) */}
                   <td className="px-2 py-3 text-center align-top">
                     {lead.estado === "Inscrito" ? (
-                      <ElegantDatePicker
-                        type="date"
-                        colorClass="indigo"
-                        value={lead.inicioClase}
-                        onChange={(v) =>
-                          onUpdateLead(lead.id, "inicioClase", v)
-                        }
-                      />
+                      <div className="flex flex-col items-center gap-1.5">
+                        <ElegantDatePicker
+                          type="date"
+                          colorClass="indigo"
+                          value={lead.inicioClase}
+                          onChange={(v) =>
+                            onUpdateLead(lead.id, "inicioClase", v)
+                          }
+                        />
+                        {lead.status === "finalizado" && lead.fechaFinClase && (
+                          <span
+                            className="text-[7px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded shadow-sm border border-emerald-100 flex items-center gap-1"
+                            title="Fecha de Finalización"
+                          >
+                            <span>✓</span>{" "}
+                            {new Date(lead.fechaFinClase).toLocaleDateString(
+                              "es-ES",
+                              { day: "2-digit", month: "short" },
+                            )}
+                          </span>
+                        )}
+                      </div>
                     ) : (
                       "---"
                     )}
@@ -617,7 +627,7 @@ export default function LeadTable({
                     )}
                   </td>
 
-                  {/* ESTATUS CONDICIONAL */}
+                  {/* ESTATUS CONDICIONAL (AHORA INTERCEPTA EL FINALIZADO) */}
                   <td className="px-2 py-3 text-center align-top">
                     {lead.estado === "Inscrito" && (
                       <AccordionSelect
@@ -637,7 +647,13 @@ export default function LeadTable({
                           { value: "abandonado", label: "Aband" },
                           { value: "no apto", label: "No Apto" },
                         ]}
-                        onChange={(v) => onUpdateLead(lead.id, "status", v)}
+                        onChange={(v) => {
+                          if (v === "finalizado") {
+                            onFinalize(lead); // ABRE MODAL
+                          } else {
+                            onUpdateLead(lead.id, "status", v); // ACTUALIZA DIRECTO
+                          }
+                        }}
                         renderBadge={(v) => {
                           let badgeClass =
                             "bg-blue-500 text-white border-blue-600";
