@@ -543,7 +543,6 @@ export default function LeadTable({
                         </div>
                       )}
 
-                      {/* NUEVO: INTERESADO AHORA MUESTRA TURNO Y DOCUMENTOS */}
                       {lead.estado === "Interesado" && (
                         <div className="flex flex-col items-center gap-1 w-full">
                           <AccordionSelect
@@ -591,8 +590,11 @@ export default function LeadTable({
                         </div>
                       )}
 
-                      {lead.estado === "Registrado" && (
-                        <div className="flex flex-col items-center gap-1.5 w-full">
+                      {/* --- ACTUALIZACIÓN: REGISTRADO O PENDIENTE CON DOCS Y ACCESOS --- */}
+                      {(lead.estado === "Registrado" ||
+                        (lead.estado === "Inscrito" &&
+                          lead.status === "pendiente")) && (
+                        <div className="flex flex-col items-center gap-1 w-full">
                           <span className="text-[6.5px] font-black text-purple-400 uppercase tracking-widest flex items-center gap-0.5">
                             <svg
                               className="w-2 h-2"
@@ -607,14 +609,15 @@ export default function LeadTable({
                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                               />
                             </svg>
-                            Documentación
+                            Operaciones
                           </span>
+
                           <div className="flex gap-1 w-full">
                             <button
                               onClick={() =>
                                 onUpdateLead(lead.id, "doc1", !lead.doc1)
                               }
-                              className={`flex-1 py-1.5 rounded-lg border text-[8px] font-black transition-colors ${lead.doc1 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
+                              className={`flex-1 py-1 rounded-lg border text-[8px] font-black transition-colors ${lead.doc1 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
                             >
                               {lead.situacion === "Autonomo" ? "REC" : "NOM"}
                             </button>
@@ -622,52 +625,73 @@ export default function LeadTable({
                               onClick={() =>
                                 onUpdateLead(lead.id, "doc2", !lead.doc2)
                               }
-                              className={`flex-1 py-1.5 rounded-lg border text-[8px] font-black transition-colors ${lead.doc2 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
+                              className={`flex-1 py-1 rounded-lg border text-[8px] font-black transition-colors ${lead.doc2 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
                             >
                               {lead.situacion === "Autonomo" ? "IAE" : "CON"}
                             </button>
                           </div>
+
+                          {/* Botón de control de accesos (Solo para Pendientes) */}
+                          {lead.estado === "Inscrito" &&
+                            lead.status === "pendiente" && (
+                              <button
+                                onClick={() =>
+                                  onUpdateLead(
+                                    lead.id,
+                                    "tieneUsuarios",
+                                    !lead.tieneUsuarios,
+                                  )
+                                }
+                                className={`w-full py-1 rounded-lg border text-[7.5px] font-black uppercase transition-all flex items-center justify-center gap-1 ${lead.tieneUsuarios ? "bg-sky-50 text-sky-600 border-sky-200" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
+                              >
+                                🔑{" "}
+                                {lead.tieneUsuarios
+                                  ? "Accesos Creados"
+                                  : "Sin Accesos"}
+                              </button>
+                            )}
                         </div>
                       )}
 
-                      {lead.estado === "Inscrito" && (
-                        <div className="flex flex-col gap-1.5 w-full">
-                          <button
-                            onClick={() => onManageLead(lead)}
-                            className="group w-full bg-white text-slate-600 px-2 py-1.5 rounded-lg text-[8.5px] font-black tracking-widest uppercase border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all shadow-sm flex items-center justify-center gap-1 active:scale-95"
-                          >
-                            <svg
-                              className="w-3 h-3 text-indigo-400 group-hover:rotate-90 transition-transform duration-500"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+                      {lead.estado === "Inscrito" &&
+                        lead.status === "en curso" && (
+                          <div className="flex flex-col gap-1.5 w-full">
+                            <button
+                              onClick={() => onManageLead(lead)}
+                              className="group w-full bg-white text-slate-600 px-2 py-1.5 rounded-lg text-[8.5px] font-black tracking-widest uppercase border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all shadow-sm flex items-center justify-center gap-1 active:scale-95"
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2.5}
-                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2.5}
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                              />
-                            </svg>
-                            Panel Alumno
-                          </button>
-                          <button
-                            onClick={() => onFollowUp(lead)}
-                            className={`w-full py-1.5 rounded-lg border text-[8.5px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm hover:shadow ${nFaltas >= 3 ? "bg-rose-500 text-white border-rose-600 ring-2 ring-rose-200 shadow-rose-200" : nFaltas > 0 ? "bg-amber-50 text-amber-600 border-amber-300" : "bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50"}`}
-                          >
-                            <div
-                              className={`w-1.5 h-1.5 rounded-full shadow-sm border border-white/50 ${nFaltas >= 3 ? "bg-white animate-pulse" : nFaltas > 0 ? "bg-amber-500" : "bg-emerald-400"}`}
-                            ></div>
-                            {nFaltas} Faltas
-                          </button>
-                        </div>
-                      )}
+                              <svg
+                                className="w-3 h-3 text-indigo-400 group-hover:rotate-90 transition-transform duration-500"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2.5}
+                                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2.5}
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                              </svg>
+                              Panel Alumno
+                            </button>
+                            <button
+                              onClick={() => onFollowUp(lead)}
+                              className={`w-full py-1.5 rounded-lg border text-[8.5px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm hover:shadow ${nFaltas >= 3 ? "bg-rose-500 text-white border-rose-600 ring-2 ring-rose-200 shadow-rose-200" : nFaltas > 0 ? "bg-amber-50 text-amber-600 border-amber-300" : "bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50"}`}
+                            >
+                              <div
+                                className={`w-1.5 h-1.5 rounded-full shadow-sm border border-white/50 ${nFaltas >= 3 ? "bg-white animate-pulse" : nFaltas > 0 ? "bg-amber-500" : "bg-emerald-400"}`}
+                              ></div>
+                              {nFaltas} Faltas
+                            </button>
+                          </div>
+                        )}
 
                       {lead.estado === "No Interesado" && (
                         <span className="text-slate-300 text-[8.5px] font-bold uppercase tracking-widest bg-white px-2 py-1 rounded-lg border border-slate-100">

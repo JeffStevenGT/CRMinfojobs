@@ -29,12 +29,19 @@ export default function CrmDashboard() {
   const [isFollowUpOpen, setIsFollowUpOpen] = useState(false);
   const [leadToEdit, setLeadToEdit] = useState(null);
   const [leadToFollow, setLeadToFollow] = useState(null);
+  const [commentModal, setCommentModal] = useState({
+    open: false,
+    text: "",
+    author: "",
+  });
+  const [manageModal, setManageModal] = useState({ open: false, lead: null });
   const [finalizeModal, setFinalizeModal] = useState({
     open: false,
     lead: null,
     fechaInicio: "",
     fechaFin: "",
   });
+
   const [toast, setToast] = useState({
     show: false,
     message: "",
@@ -69,7 +76,7 @@ export default function CrmDashboard() {
           status: "pendiente",
           doc1: false,
           doc2: false,
-          tieneUsuarios: false,
+          regalo: false, // Inicializamos la variable del regalo
           respondioWpp: false,
           fechaCreacion: new Date().toISOString(),
         });
@@ -210,6 +217,12 @@ export default function CrmDashboard() {
                         fechaFin: "",
                       })
                     }
+                    onViewComment={(text, author) =>
+                      setCommentModal({ open: true, text, author })
+                    }
+                    onManageLead={(l) =>
+                      setManageModal({ open: true, lead: l })
+                    }
                   />
                 ) : (
                   <KanbanView
@@ -238,10 +251,23 @@ export default function CrmDashboard() {
               </div>
             </div>
           )}
-          {activeTab === "agenda-clm" && <AgendaView leads={leadsCLM} />}
+          {activeTab === "agenda-clm" && (
+            <AgendaView
+              leads={leadsCLM}
+              onUpdateLead={(id, c, v) =>
+                updateDoc(doc(db, "leads", id), { [c]: v })
+              }
+              onEditLead={(l) => {
+                setLeadToEdit(l);
+                setIsModalOpen(true);
+              }}
+            />
+          )}
           {activeTab === "reportes-clm" && <ReportsView leads={leadsCLM} />}
         </div>
       </main>
+
+      {/* --- ZONA DE MODALES --- */}
 
       {isModalOpen && (
         <LeadFormModal
@@ -253,6 +279,308 @@ export default function CrmDashboard() {
           onSave={handleSaveLead}
           leadToEdit={leadToEdit}
         />
+      )}
+
+      {isFollowUpOpen && (
+        <FollowUpModal
+          onClose={() => setIsFollowUpOpen(false)}
+          onSave={async (u) => {
+            const f = 20 - (u.asistencia || []).filter((d) => d).length;
+            let s = u.status || "en curso";
+            if (f >= 3) s = "no apto";
+            await updateDoc(doc(db, "leads", u.id), {
+              ...u,
+              faltas: f.toString(),
+              status: s,
+            });
+            setIsFollowUpOpen(false);
+          }}
+          lead={leadToFollow}
+        />
+      )}
+
+      {commentModal.open && (
+        <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white w-full max-w-md rounded-[2rem] p-8 shadow-2xl border border-slate-100 relative">
+            <button
+              onClick={() =>
+                setCommentModal({ open: false, text: "", author: "" })
+              }
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 p-2 rounded-xl transition-colors"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={3}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-2">
+              Observaciones
+            </h3>
+            <p className="text-[10px] text-indigo-500 font-bold uppercase mb-6">
+              {commentModal.author}
+            </p>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs font-bold text-slate-600 whitespace-pre-wrap max-h-60 overflow-y-auto">
+              {commentModal.text}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- PANEL DE ALUMNO (ESTILO PROYECTO A) --- */}
+      {manageModal.open && manageModal.lead && (
+        <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white w-full max-w-[420px] rounded-[2rem] p-8 shadow-2xl border border-slate-100 relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500"></div>
+
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest leading-none">
+                  Panel Alumno
+                </h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase mt-1.5 truncate max-w-[250px]">
+                  {manageModal.lead.nombre}
+                </p>
+              </div>
+              <button
+                onClick={() => setManageModal({ open: false, lead: null })}
+                className="text-slate-300 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 p-2 rounded-xl transition-colors"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                await updateDoc(doc(db, "leads", manageModal.lead.id), {
+                  fechaInicioClase: manageModal.lead.fechaInicioClase || "",
+                  fechaFinClase: manageModal.lead.fechaFinClase || "",
+                  doc1: manageModal.lead.doc1 || false,
+                  doc2: manageModal.lead.doc2 || false,
+                  regalo: manageModal.lead.regalo || false,
+                });
+                notify("Panel Alumno actualizado");
+                setManageModal({ open: false, lead: null });
+              }}
+              className="space-y-6"
+            >
+              {/* SECCIÓN 1: FECHAS DEL CURSO */}
+              <div className="flex gap-4">
+                <div className="flex-1 space-y-1.5">
+                  <label className="text-[9px] font-black text-slate-400 uppercase ml-1">
+                    Inicio de Curso
+                  </label>
+                  <input
+                    type="date"
+                    value={manageModal.lead.fechaInicioClase || ""}
+                    onChange={(e) =>
+                      setManageModal({
+                        ...manageModal,
+                        lead: {
+                          ...manageModal.lead,
+                          fechaInicioClase: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 uppercase"
+                  />
+                </div>
+                <div className="flex-1 space-y-1.5">
+                  <label className="text-[9px] font-black text-slate-400 uppercase ml-1">
+                    Fin de Curso
+                  </label>
+                  <input
+                    type="date"
+                    value={manageModal.lead.fechaFinClase || ""}
+                    onChange={(e) =>
+                      setManageModal({
+                        ...manageModal,
+                        lead: {
+                          ...manageModal.lead,
+                          fechaFinClase: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 uppercase"
+                  />
+                </div>
+              </div>
+
+              {/* SECCIÓN 2: DOCUMENTOS Y REGALO (Diseño Simétrico) */}
+              <div className="grid grid-cols-2 gap-6 pt-3 border-t border-slate-50">
+                {/* Columna Izquierda: Docs */}
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-slate-400 uppercase ml-1">
+                    Documentación
+                  </label>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setManageModal({
+                          ...manageModal,
+                          lead: {
+                            ...manageModal.lead,
+                            doc1: !manageModal.lead.doc1,
+                          },
+                        })
+                      }
+                      className={`flex-1 py-2 rounded-lg border text-[9px] font-black uppercase transition-all shadow-sm active:scale-95 ${manageModal.lead.doc1 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-white text-slate-400 border-slate-200 hover:bg-slate-50"}`}
+                    >
+                      {manageModal.lead.situacion === "Autonomo"
+                        ? "RECIBO"
+                        : "NÓMINA"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setManageModal({
+                          ...manageModal,
+                          lead: {
+                            ...manageModal.lead,
+                            doc2: !manageModal.lead.doc2,
+                          },
+                        })
+                      }
+                      className={`flex-1 py-2 rounded-lg border text-[9px] font-black uppercase transition-all shadow-sm active:scale-95 ${manageModal.lead.doc2 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-white text-slate-400 border-slate-200 hover:bg-slate-50"}`}
+                    >
+                      {manageModal.lead.situacion === "Autonomo"
+                        ? "IAE"
+                        : "CONTRATO"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Columna Derecha: Regalo */}
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-slate-400 uppercase ml-1">
+                    Entregables
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setManageModal({
+                        ...manageModal,
+                        lead: {
+                          ...manageModal.lead,
+                          regalo: !manageModal.lead.regalo,
+                        },
+                      })
+                    }
+                    className={`w-full py-2 rounded-lg border text-[9px] font-black uppercase transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5 ${manageModal.lead.regalo ? "bg-indigo-50 text-indigo-600 border-indigo-200" : "bg-white text-slate-400 border-slate-200 hover:bg-slate-50"}`}
+                  >
+                    {manageModal.lead.regalo ? "🎁 Entregado" : "🎁 Pendiente"}
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  className="w-full bg-slate-800 text-white py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-200 active:scale-95 transition-all hover:bg-slate-700"
+                >
+                  Guardar Información
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* FINALIZAR COMISIÓN (Este es el modal que se abre al pasar a "Finalizados") */}
+      {finalizeModal.open && (
+        <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border border-slate-100">
+            <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest text-center mb-6">
+              Finalizar para Pago
+            </h3>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSaveLead({
+                  ...finalizeModal.lead,
+                  estado: "Inscrito",
+                  status: "finalizado",
+                  fechaInicioClase: finalizeModal.fechaInicio,
+                  fechaFinClase: finalizeModal.fechaFin,
+                });
+                setFinalizeModal({ open: false });
+              }}
+              className="space-y-4"
+            >
+              <div className="space-y-1">
+                <label className="text-[9px] font-black text-slate-400 uppercase ml-1">
+                  Fecha de Inicio
+                </label>
+                <input
+                  required
+                  type="date"
+                  value={finalizeModal.fechaInicio}
+                  onChange={(e) =>
+                    setFinalizeModal({
+                      ...finalizeModal,
+                      fechaInicio: e.target.value,
+                    })
+                  }
+                  className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-black text-emerald-500 uppercase ml-1">
+                  Fecha de Término
+                </label>
+                <input
+                  required
+                  type="date"
+                  value={finalizeModal.fechaFin}
+                  onChange={(e) =>
+                    setFinalizeModal({
+                      ...finalizeModal,
+                      fechaFin: e.target.value,
+                    })
+                  }
+                  className="w-full p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-xs font-bold text-emerald-700 outline-none focus:ring-2 focus:ring-emerald-200"
+                />
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setFinalizeModal({ open: false })}
+                  className="flex-1 py-3 text-[10px] font-black text-slate-400 uppercase hover:text-slate-600 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-[2] bg-emerald-500 text-white py-3 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-emerald-100 active:scale-95 transition-all"
+                >
+                  Comisionar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
