@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "./layout/Sidebar";
 import Header from "./layout/Header";
 import LeadTable from "./leads/LeadTable";
+import KanbanView from "./leads/KanbanView";
 import AgendaView from "./agenda/AgendaView";
 import ReportsView from "./reports/ReportsView";
 import LeadFormModal from "./leads/LeadFormModal";
@@ -26,14 +27,16 @@ export default function CrmDashboard() {
   const [leadToEdit, setLeadToEdit] = useState(null);
   const [leadToFollow, setLeadToFollow] = useState(null);
 
-  // NUEVO MODAL: Captura fechas para "Finalizado"
+  // ESTADOS DE VISTA Y FILTROS
+  const [viewMode, setViewMode] = useState("table");
+  const [tableFilter, setTableFilter] = useState("todos"); // <-- NUEVO FILTRO PARA LA TABLA
+
   const [finalizeModal, setFinalizeModal] = useState({
     open: false,
     lead: null,
     fechaInicio: "",
     fechaFin: "",
   });
-
   const [viewComment, setViewComment] = useState({
     open: false,
     text: "",
@@ -69,7 +72,6 @@ export default function CrmDashboard() {
     }
   };
 
-  // Función exclusiva para guardar las fechas del curso y pasarlo a "Finalizado"
   const handleFinalizeSave = async (e) => {
     e.preventDefault();
     try {
@@ -130,20 +132,63 @@ export default function CrmDashboard() {
     }
   };
 
+  // LOGICA DE FILTRADO COMBINADO (Buscador + Pestañas de Tabla)
   const filteredLeads = leadsCLM
     .filter((l) => {
+      // 1. Buscador de texto
       const b = searchTerm.toLowerCase();
-      return (
+      const matchText =
         l.nombre?.toLowerCase().includes(b) ||
         l.whatsapp?.includes(searchTerm) ||
-        l.quienRefirio?.toLowerCase().includes(b)
-      );
+        l.quienRefirio?.toLowerCase().includes(b);
+      if (!matchText) return false;
+
+      // 2. Filtro de Pestañas (Solo aplica si estamos en vista de tabla)
+      if (viewMode === "kanban" || tableFilter === "todos") return true;
+
+      if (tableFilter === "prospectos") {
+        return l.estado === "Agendado" || l.estado === "Interesado";
+      }
+      if (tableFilter === "activos") {
+        return (
+          l.estado === "Inscrito" &&
+          (l.status === "en curso" || l.status === "pendiente")
+        );
+      }
+      if (tableFilter === "historico") {
+        return (
+          l.estado === "No Interesado" ||
+          (l.estado === "Inscrito" &&
+            (l.status === "finalizado" ||
+              l.status === "no apto" ||
+              l.status === "abandonado"))
+        );
+      }
+      return true;
     })
     .sort((a, b) => {
       const dateA = a.fechaCreacion ? new Date(a.fechaCreacion).getTime() : 0;
       const dateB = b.fechaCreacion ? new Date(b.fechaCreacion).getTime() : 0;
       return dateB - dateA;
     });
+
+  // Contadores para las pestañas
+  const countProspectos = leadsCLM.filter(
+    (l) => l.estado === "Agendado" || l.estado === "Interesado",
+  ).length;
+  const countActivos = leadsCLM.filter(
+    (l) =>
+      l.estado === "Inscrito" &&
+      (l.status === "en curso" || l.status === "pendiente"),
+  ).length;
+  const countHistorico = leadsCLM.filter(
+    (l) =>
+      l.estado === "No Interesado" ||
+      (l.estado === "Inscrito" &&
+        (l.status === "finalizado" ||
+          l.status === "no apto" ||
+          l.status === "abandonado")),
+  ).length;
 
   return (
     <div className="flex h-screen bg-[#FDFDFD] font-sans overflow-hidden relative">
@@ -172,7 +217,8 @@ export default function CrmDashboard() {
 
         <div className="flex-1 overflow-auto p-8 custom-scrollbar">
           {activeTab === "clientes-clm" && (
-            <div className="max-w-[1600px] mx-auto space-y-6">
+            <div className="max-w-[1600px] mx-auto space-y-4 flex flex-col h-full">
+              {/* CABECERA PRINCIPAL Y BOTONES DE VISTA */}
               <div className="flex justify-between items-end px-2">
                 <div>
                   <h1 className="text-xl font-black text-slate-800 uppercase tracking-widest italic">
@@ -182,37 +228,131 @@ export default function CrmDashboard() {
                     Directorio de Gestión Operativa
                   </p>
                 </div>
-                <button
-                  onClick={() => setIsModalOpen(true)}
-                  className="bg-[#4F46E5] text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all"
-                >
-                  + Nuevo Lead
-                </button>
+
+                <div className="flex items-center gap-4">
+                  <div className="bg-slate-200/50 p-1 rounded-xl flex items-center border border-slate-200">
+                    <button
+                      onClick={() => setViewMode("table")}
+                      className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${viewMode === "table" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+                    >
+                      Tabla
+                    </button>
+                    <button
+                      onClick={() => setViewMode("kanban")}
+                      className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${viewMode === "kanban" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+                    >
+                      Tablero
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="bg-[#4F46E5] text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all"
+                  >
+                    + Nuevo Lead
+                  </button>
+                </div>
               </div>
-              <LeadTable
-                leads={filteredLeads}
-                onUpdateLead={handleUpdateLead}
-                onEditLead={(l) => {
-                  setLeadToEdit(l);
-                  setIsModalOpen(true);
-                }}
-                onFollowUp={(l) => {
-                  setLeadToFollow(l);
-                  setIsFollowUpOpen(true);
-                }}
-                onDeleteLead={handleDelete}
-                onViewComment={(text, client) =>
-                  setViewComment({ open: true, text, client })
-                }
-                onFinalize={(lead) =>
-                  setFinalizeModal({
-                    open: true,
-                    lead,
-                    fechaInicio: lead.inicioClase || "",
-                    fechaFin: "",
-                  })
-                }
-              />
+
+              {/* NUEVO: SUB-NAVEGACIÓN (PESTAÑAS) SOLO PARA LA VISTA DE TABLA */}
+              {viewMode === "table" && (
+                <div className="flex items-center gap-2 px-2 mt-2">
+                  <button
+                    onClick={() => setTableFilter("todos")}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${tableFilter === "todos" ? "bg-slate-800 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-50"}`}
+                  >
+                    📋 Todos{" "}
+                    <span
+                      className={`px-1.5 py-0.5 rounded-md text-[8px] ${tableFilter === "todos" ? "bg-slate-600" : "bg-slate-100"}`}
+                    >
+                      {leadsCLM.length}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setTableFilter("prospectos")}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${tableFilter === "prospectos" ? "bg-blue-500 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-blue-50"}`}
+                  >
+                    📞 Prospectos{" "}
+                    <span
+                      className={`px-1.5 py-0.5 rounded-md text-[8px] ${tableFilter === "prospectos" ? "bg-blue-400" : "bg-slate-100"}`}
+                    >
+                      {countProspectos}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setTableFilter("activos")}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${tableFilter === "activos" ? "bg-indigo-500 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-indigo-50"}`}
+                  >
+                    📚 Activos{" "}
+                    <span
+                      className={`px-1.5 py-0.5 rounded-md text-[8px] ${tableFilter === "activos" ? "bg-indigo-400" : "bg-slate-100"}`}
+                    >
+                      {countActivos}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setTableFilter("historico")}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${tableFilter === "historico" ? "bg-slate-400 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-100"}`}
+                  >
+                    🗄️ Histórico{" "}
+                    <span
+                      className={`px-1.5 py-0.5 rounded-md text-[8px] ${tableFilter === "historico" ? "bg-slate-300" : "bg-slate-100"}`}
+                    >
+                      {countHistorico}
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              {/* ÁREA DE TRABAJO (RENDERIZA TABLA O KANBAN) */}
+              <div className="flex-1 min-h-0 pt-2">
+                {viewMode === "table" ? (
+                  <LeadTable
+                    leads={filteredLeads}
+                    onUpdateLead={handleUpdateLead}
+                    onEditLead={(l) => {
+                      setLeadToEdit(l);
+                      setIsModalOpen(true);
+                    }}
+                    onFollowUp={(l) => {
+                      setLeadToFollow(l);
+                      setIsFollowUpOpen(true);
+                    }}
+                    onDeleteLead={handleDelete}
+                    onViewComment={(text, client) =>
+                      setViewComment({ open: true, text, client })
+                    }
+                    onFinalize={(lead) =>
+                      setFinalizeModal({
+                        open: true,
+                        lead,
+                        fechaInicio: lead.inicioClase || "",
+                        fechaFin: "",
+                      })
+                    }
+                  />
+                ) : (
+                  <KanbanView
+                    leads={filteredLeads}
+                    onUpdateLead={handleUpdateLead}
+                    onEditLead={(l) => {
+                      setLeadToEdit(l);
+                      setIsModalOpen(true);
+                    }}
+                    onFollowUp={(l) => {
+                      setLeadToFollow(l);
+                      setIsFollowUpOpen(true);
+                    }}
+                    onFinalize={(lead) =>
+                      setFinalizeModal({
+                        open: true,
+                        lead,
+                        fechaInicio: lead.inicioClase || "",
+                        fechaFin: "",
+                      })
+                    }
+                  />
+                )}
+              </div>
             </div>
           )}
 
@@ -231,7 +371,7 @@ export default function CrmDashboard() {
         </div>
       </main>
 
-      {/* MODAL PARA SOLICITAR FECHAS AL PONER ESTATUS "FINALIZADO" */}
+      {/* MODAL FINALIZAR CURSO */}
       {finalizeModal.open && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl p-6 border border-slate-100">
