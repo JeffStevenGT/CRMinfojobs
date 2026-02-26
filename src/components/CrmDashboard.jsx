@@ -14,10 +14,10 @@ import {
   addDoc,
   updateDoc,
   doc,
+  deleteDoc,
 } from "firebase/firestore";
 
 export default function CrmDashboard() {
-  // --- ESTADOS ---
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("clientes-clm");
   const [leadsCLM, setLeadsCLM] = useState([]);
@@ -25,7 +25,6 @@ export default function CrmDashboard() {
   const [viewMode, setViewMode] = useState("kanban");
   const [projectFilter, setProjectFilter] = useState("todos");
 
-  // Modales
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFollowUpOpen, setIsFollowUpOpen] = useState(false);
   const [leadToEdit, setLeadToEdit] = useState(null);
@@ -95,7 +94,6 @@ export default function CrmDashboard() {
       (a, b) => new Date(b.fechaCreacion || 0) - new Date(a.fechaCreacion || 0),
     );
 
-  // Estilos Toggles Unificados
   const containerStyle =
     "bg-slate-200/40 backdrop-blur-sm p-1 rounded-2xl border border-slate-200 flex items-center gap-1 shadow-inner";
   const btnBase =
@@ -103,14 +101,11 @@ export default function CrmDashboard() {
 
   return (
     <div className="flex h-screen bg-[#FDFDFD] font-sans overflow-hidden text-slate-900">
-      {/* CSS GLOBAL: Quita scroll Y pero mantiene funcionalidad */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
         * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
         *::-webkit-scrollbar { display: none !important; }
-        
-        /* Regla específica para el scroll horizontal del Tablero al pasar el mouse */
         .board-container:hover { scrollbar-width: thin !important; }
         .board-container:hover::-webkit-scrollbar { display: block !important; height: 6px !important; }
         .board-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -134,22 +129,22 @@ export default function CrmDashboard() {
       />
 
       <main className="flex-1 flex flex-col min-w-0 bg-[#F9FAFB] h-full overflow-hidden">
-        <Header
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        />
+        <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
 
         <div className="flex-1 overflow-hidden p-4 lg:p-6 flex flex-col">
           {activeTab === "clientes-clm" && (
             <div className="max-w-full mx-auto space-y-4 h-full flex flex-col w-full">
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 px-2 shrink-0">
-                <h1 className="text-2xl font-black text-slate-800 uppercase italic">
-                  Directorio Operativo
-                </h1>
+                <div className="space-y-0.5">
+                  <h1 className="text-2xl font-black text-slate-800 uppercase italic">
+                    Control Jeff
+                  </h1>
+                  <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">
+                    Panel Estratégico Multicampaña
+                  </p>
+                </div>
 
                 <div className="flex items-center gap-3 self-end lg:self-auto scale-90 lg:scale-100 origin-right">
-                  {/* Selector de Campañas */}
                   <div className={containerStyle}>
                     {["todos", "CLM", "Lideres", "Sandetel"].map((p) => (
                       <button
@@ -161,10 +156,7 @@ export default function CrmDashboard() {
                       </button>
                     ))}
                   </div>
-
                   <div className="h-6 w-px bg-slate-200 mx-1"></div>
-
-                  {/* Selector de Vista (Tabla/Tablero) */}
                   <div className={containerStyle}>
                     <button
                       onClick={() => setViewMode("table")}
@@ -179,7 +171,6 @@ export default function CrmDashboard() {
                       Tablero
                     </button>
                   </div>
-
                   <button
                     onClick={() => {
                       setLeadToEdit(null);
@@ -192,7 +183,6 @@ export default function CrmDashboard() {
                 </div>
               </div>
 
-              {/* Renderizado Condicional de Vistas */}
               <div className="flex-1 min-h-0 h-full board-container overflow-x-auto overflow-y-auto">
                 {viewMode === "table" ? (
                   <LeadTable
@@ -208,12 +198,10 @@ export default function CrmDashboard() {
                       setLeadToFollow(l);
                       setIsFollowUpOpen(true);
                     }}
-                    onManageLead={(l) => setManageModalLeadId(l.id)}
                     onDeleteLead={(id) =>
                       window.confirm("¿Eliminar?") &&
                       deleteDoc(doc(db, "leads", id))
                     }
-                    onViewComment={(t, c) => alert(t)}
                     onFinalize={(l) =>
                       setFinalizeModal({
                         open: true,
@@ -250,7 +238,6 @@ export default function CrmDashboard() {
               </div>
             </div>
           )}
-
           {activeTab === "agenda-clm" && <AgendaView leads={leadsCLM} />}
           {activeTab === "reportes-clm" && <ReportsView leads={leadsCLM} />}
         </div>

@@ -10,85 +10,84 @@ export default function Sidebar({
     { id: "clientes-clm", label: "DIRECTORIO", icon: "📋" },
     { id: "agenda-clm", label: "AGENDA", icon: "📅" },
     { id: "reportes-clm", label: "REPORTES", icon: "📊" },
-    { id: "comisiones", label: "COMISIONES", icon: "💰" },
   ];
 
   return (
-    <>
-      {/* Overlay para móviles cuando el sidebar está abierto */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[100] lg:hidden"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-
-      <aside
-        className={`fixed lg:static inset-y-0 left-0 z-[110] w-64 bg-white border-r border-slate-100 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "-translate-x-full lg:-ml-64"
-        }`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Logo / Branding */}
-          <div className="p-8">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-100">
-                <span className="text-xl font-black">L</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-black text-slate-800 tracking-tighter">
-                  LUIS CRM
-                </span>
-                <span className="text-[8px] font-black text-indigo-500 uppercase tracking-[0.2em]">
-                  Engineering
-                </span>
-              </div>
+    <aside
+      className={`bg-white border-r border-slate-100 transition-all duration-300 ease-in-out flex flex-col z-[110] shadow-sm ${
+        isOpen ? "w-64" : "w-20"
+      }`}
+    >
+      {/* Cabecera Sidebar con Hamburguesa */}
+      <div className="p-6 flex items-center justify-between">
+        {isOpen && (
+          <div className="flex items-center gap-3 animate-in fade-in duration-500">
+            <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg shadow-indigo-100">
+              J
             </div>
+            <span className="text-xs font-black text-slate-800 tracking-tighter">
+              JEFF CRM
+            </span>
           </div>
+        )}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={`p-2 rounded-xl hover:bg-slate-50 transition-colors ${!isOpen ? "mx-auto" : ""}`}
+        >
+          <svg
+            className="w-5 h-5 text-slate-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2.5}
+              d="M4 6h16M4 12h16m-7 6h7"
+            />
+          </svg>
+        </button>
+      </div>
 
-          {/* Menú Principal */}
-          <nav className="flex-1 px-4 space-y-1.5">
-            <p className="px-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
-              Gestión Principal
+      {/* Menú Principal */}
+      <nav className="flex-1 px-3 mt-4 space-y-2">
+        {menuItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setActiveTab(item.id)}
+            title={!isOpen ? item.label : ""}
+            className={`w-full flex items-center rounded-2xl transition-all duration-300 group ${
+              isOpen ? "px-4 py-3.5 gap-4" : "p-4 justify-center"
+            } ${
+              activeTab === item.id
+                ? "bg-slate-900 text-white shadow-xl shadow-slate-200"
+                : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+            }`}
+          >
+            <span className="text-lg">{item.icon}</span>
+            {isOpen && (
+              <span className="text-[10px] font-black uppercase tracking-widest animate-in fade-in slide-in-from-left-2">
+                {item.label}
+              </span>
+            )}
+          </button>
+        ))}
+      </nav>
+
+      {/* Perfil de Usuario Jeff (Solo visible si está abierto) */}
+      {isOpen && (
+        <div className="p-6 animate-in fade-in duration-500">
+          <div className="bg-slate-50 rounded-3xl p-4 border border-slate-100">
+            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center">
+              Ingeniero Activo
             </p>
-            {menuItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setActiveTab(item.id);
-                  // En móviles, cerramos el sidebar al elegir una opción
-                  if (window.innerWidth < 1024) setIsOpen(false);
-                }}
-                className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 ${
-                  activeTab === item.id
-                    ? "bg-slate-900 text-white shadow-xl shadow-slate-200 translate-x-1"
-                    : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-                }`}
-              >
-                <span className="text-lg">{item.icon}</span>
-                <span className="text-[10px] font-black uppercase tracking-widest">
-                  {item.label}
-                </span>
-                {activeTab === item.id && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                )}
-              </button>
-            ))}
-          </nav>
-
-          {/* Pie del Sidebar */}
-          <div className="p-6 mt-auto">
-            <div className="bg-slate-50 rounded-3xl p-5 border border-slate-100">
-              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center">
-                Usuario Activo
-              </p>
-              <p className="text-[10px] font-black text-slate-800 text-center">
-                LUIS • SENATI
-              </p>
-            </div>
+            <p className="text-[10px] font-black text-slate-800 text-center uppercase">
+              JEFF • SENATI
+            </p>
           </div>
         </div>
-      </aside>
-    </>
+      )}
+    </aside>
   );
 }
