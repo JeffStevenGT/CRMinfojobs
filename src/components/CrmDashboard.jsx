@@ -65,12 +65,10 @@ export default function CrmDashboard() {
         await addDoc(collection(db, "leads"), {
           ...data,
           asistencia: Array(20).fill(true),
-          faltas: "0",
           status: "pendiente",
           doc1: false,
           doc2: false,
           tieneUsuarios: false,
-          regalo: "no",
           respondioWpp: false,
           fechaCreacion: new Date().toISOString(),
         });
@@ -86,12 +84,8 @@ export default function CrmDashboard() {
   const handleUpdateLead = async (id, campo, valor) => {
     try {
       await updateDoc(doc(db, "leads", id), { [campo]: valor });
-      if (
-        !["respondioWpp", "doc1", "doc2", "tieneUsuarios", "regalo"].includes(
-          campo,
-        )
-      )
-        notify("Dato Guardado");
+      if (!["respondioWpp", "doc1", "doc2", "tieneUsuarios"].includes(campo))
+        notify("Guardado");
     } catch (e) {
       notify("Error", "error");
     }
@@ -103,23 +97,30 @@ export default function CrmDashboard() {
       const matchText =
         l.nombre?.toLowerCase().includes(b) || l.whatsapp?.includes(searchTerm);
       const proj = l.proyecto || "CLM";
-      const matchProject = projectFilter === "todos" || proj === projectFilter;
-      return matchText && matchProject;
+      return matchText && (projectFilter === "todos" || proj === projectFilter);
     })
     .sort(
       (a, b) => new Date(b.fechaCreacion || 0) - new Date(a.fechaCreacion || 0),
     );
 
-  // --- CLASES UNIFICADAS ---
-  const containerStyle =
-    "bg-slate-200/40 backdrop-blur-sm p-1 rounded-2xl border border-slate-200 flex items-center gap-1 shadow-inner";
-  const btnBase =
-    "px-5 py-2 rounded-xl text-[9.5px] font-black uppercase tracking-widest transition-all duration-300 active:scale-95";
-
   return (
-    <div className="flex h-screen bg-[#FDFDFD] font-sans overflow-hidden relative">
+    <div className="flex h-screen bg-[#FDFDFD] font-sans overflow-hidden relative text-slate-900">
+      {/* CSS PARA SCROLLBARS ELEGANTES */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        .custom-scroll-x::-webkit-scrollbar { height: 8px; }
+        .custom-scroll-x::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+        .custom-scroll-x::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; border: 2px solid #f1f5f9; }
+        .custom-scroll-x::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+        
+        .hide-scroll-y::-webkit-scrollbar { width: 0px; }
+      `,
+        }}
+      />
+
       {toast.show && (
-        <div className="fixed bottom-10 right-10 z-[700] px-6 py-3 rounded-full shadow-2xl bg-slate-800 text-white animate-in fade-in slide-in-from-bottom-4">
+        <div className="fixed bottom-10 right-10 z-[700] px-6 py-3 rounded-full shadow-2xl bg-slate-800 text-white animate-in fade-in">
           <span className="text-[10px] font-black uppercase tracking-widest">
             {toast.message}
           </span>
@@ -132,82 +133,62 @@ export default function CrmDashboard() {
         setActiveTab={setActiveTab}
       />
 
-      <main className="flex-1 flex flex-col min-w-0 bg-[#F9FAFB]">
+      <main className="flex-1 flex flex-col min-w-0 bg-[#F9FAFB] h-full">
         <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
 
-        <div className="flex-1 overflow-auto p-8 custom-scrollbar">
+        {/* Contenedor principal con padding reducido para ganar espacio Y */}
+        <div className="flex-1 overflow-hidden p-4 flex flex-col">
           {activeTab === "clientes-clm" && (
-            <div className="max-w-[1600px] mx-auto space-y-6 flex flex-col h-full">
-              <div className="flex justify-between items-center px-2">
-                <div className="space-y-1">
-                  <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight italic">
+            <div className="max-w-full mx-auto space-y-3 flex flex-col h-full w-full">
+              <div className="flex justify-between items-center px-2 shrink-0">
+                <div className="space-y-0.5">
+                  <h1 className="text-xl font-black text-slate-800 uppercase italic">
                     Operaciones
                   </h1>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
-                    Multi-Proyecto
+                  <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">
+                    Luis - CRM SENATI
                   </p>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  {/* SELECTOR DE CAMPAÑAS UNIFICADO */}
-                  <div className={containerStyle}>
-                    <button
-                      onClick={() => setProjectFilter("todos")}
-                      className={`${btnBase} ${projectFilter === "todos" ? "bg-slate-800 text-white shadow-md" : "text-slate-400 hover:text-slate-600"}`}
-                    >
-                      🌎 Todos
-                    </button>
-                    <button
-                      onClick={() => setProjectFilter("CLM")}
-                      className={`${btnBase} ${projectFilter === "CLM" ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" : "text-slate-400 hover:text-indigo-500"}`}
-                    >
-                      CLM
-                    </button>
-                    <button
-                      onClick={() => setProjectFilter("Lideres")}
-                      className={`${btnBase} ${projectFilter === "Lideres" ? "bg-amber-500 text-white shadow-md shadow-amber-100" : "text-slate-400 hover:text-amber-500"}`}
-                    >
-                      LÍDERES
-                    </button>
-                    <button
-                      onClick={() => setProjectFilter("Sandetel")}
-                      className={`${btnBase} ${projectFilter === "Sandetel" ? "bg-cyan-500 text-white shadow-md shadow-cyan-100" : "text-slate-400 hover:text-cyan-500"}`}
-                    >
-                      SANDETEL
-                    </button>
+                <div className="flex items-center gap-3 scale-90 origin-right">
+                  <div className="bg-slate-200/40 p-1 rounded-2xl border border-slate-200 flex items-center gap-1 shadow-inner">
+                    {["todos", "CLM", "Lideres", "Sandetel"].map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setProjectFilter(p)}
+                        className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all ${projectFilter === p ? (p === "todos" ? "bg-slate-800 text-white" : p === "CLM" ? "bg-indigo-600 text-white" : p === "Lideres" ? "bg-amber-500 text-white" : "bg-cyan-500 text-white") : "text-slate-400"}`}
+                      >
+                        {p === "todos" ? "🌎 Todos" : p}
+                      </button>
+                    ))}
                   </div>
-
-                  <div className="h-8 w-px bg-slate-200 mx-1"></div>
-
-                  {/* SELECTOR DE VISTA UNIFICADO (MISMO ESTILO) */}
-                  <div className={containerStyle}>
+                  <div className="bg-slate-200/40 p-1 rounded-2xl border border-slate-200 flex items-center gap-1 shadow-inner">
                     <button
                       onClick={() => setViewMode("table")}
-                      className={`${btnBase} ${viewMode === "table" ? "bg-white text-indigo-600 shadow-md" : "text-slate-400 hover:text-slate-600"}`}
+                      className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all ${viewMode === "table" ? "bg-white text-indigo-600 shadow-md" : "text-slate-400"}`}
                     >
                       Tabla
                     </button>
                     <button
                       onClick={() => setViewMode("kanban")}
-                      className={`${btnBase} ${viewMode === "kanban" ? "bg-white text-indigo-600 shadow-md" : "text-slate-400 hover:text-slate-600"}`}
+                      className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all ${viewMode === "kanban" ? "bg-white text-indigo-600 shadow-md" : "text-slate-400"}`}
                     >
                       Tablero
                     </button>
                   </div>
-
                   <button
                     onClick={() => {
                       setLeadToEdit(null);
                       setIsModalOpen(true);
                     }}
-                    className="bg-[#4F46E5] text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:shadow-indigo-200 active:scale-95 transition-all"
+                    className="bg-[#4F46E5] text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95"
                   >
-                    + Nuevo Registro
+                    + Nuevo
                   </button>
                 </div>
               </div>
 
-              <div className="flex-1 min-h-0">
+              <div className="flex-1 min-h-0 h-full">
                 {viewMode === "table" ? (
                   <LeadTable
                     leads={filteredLeads}
@@ -247,21 +228,8 @@ export default function CrmDashboard() {
               </div>
             </div>
           )}
-          {activeTab === "agenda-clm" && (
-            <AgendaView
-              leads={leadsCLM}
-              onUpdateLead={handleUpdateLead}
-              onEditLead={(l) => {
-                setLeadToEdit(l);
-                setIsModalOpen(true);
-              }}
-            />
-          )}
-          {activeTab === "reportes-clm" && <ReportsView leads={leadsCLM} />}
         </div>
       </main>
-
-      {/* MODALES SE MANTIENEN IGUAL */}
       {isModalOpen && (
         <LeadFormModal
           leads={leadsCLM}
@@ -271,23 +239,6 @@ export default function CrmDashboard() {
           }}
           onSave={handleSaveLead}
           leadToEdit={leadToEdit}
-        />
-      )}
-      {isFollowUpOpen && (
-        <FollowUpModal
-          onClose={() => setIsFollowUpOpen(false)}
-          onSave={async (u) => {
-            const f = 20 - (u.asistencia || []).filter((d) => d).length;
-            let s = u.status || "en curso";
-            if (f >= 3) s = "no apto";
-            await updateDoc(doc(db, "leads", u.id), {
-              ...u,
-              faltas: f.toString(),
-              status: s,
-            });
-            setIsFollowUpOpen(false);
-          }}
-          lead={leadToFollow}
         />
       )}
     </div>

@@ -100,24 +100,23 @@ export default function KanbanView({
       <div
         draggable
         onDragStart={(e) => handleDragStart(e, lead.id)}
-        className={`bg-white p-2 pt-3 rounded-xl shadow-sm border-l-4 mb-1.5 relative overflow-hidden transition-all hover:shadow-md cursor-grab active:cursor-grabbing
-          ${isAlerta ? "border-l-orange-500 bg-orange-50/20 animate-pulse" : lead.estado === "Registrado" ? "border-l-purple-400" : "border-l-slate-300"}
+        className={`bg-white p-2 pt-2.5 rounded-xl shadow-sm border-l-4 mb-2 relative overflow-hidden transition-all hover:shadow-md cursor-grab active:cursor-grabbing
+          ${isAlerta ? "border-l-orange-500 bg-orange-50/20" : lead.estado === "Registrado" ? "border-l-purple-400" : "border-l-slate-300"}
         `}
       >
         <div
-          className={`absolute top-0 left-0 right-0 h-1 ${projectColor}`}
+          className={`absolute top-0 left-0 right-0 h-0.5 ${projectColor}`}
         ></div>
-
-        <div className="flex justify-between items-start mb-1">
+        <div className="flex justify-between items-start mb-1.5">
           <div className="min-w-0 flex-1">
             <h4 className="font-black text-[10px] text-slate-800 leading-none uppercase truncate">
               {lead.nombre}
             </h4>
-            <p className="text-[6.5px] text-slate-400 font-bold uppercase mt-0.5">
+            <p className="text-[6.5px] text-slate-400 font-bold uppercase mt-1 tracking-tight">
               {proj} • {lead.provincia || "S/P"}
             </p>
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1 items-center">
             {["Agendado", "Interesado"].includes(lead.estado) && (
               <span className="text-[9px]">
                 {lead.temperatura === "Caliente"
@@ -139,20 +138,18 @@ export default function KanbanView({
             </button>
           </div>
         </div>
-
-        {/* OPERACIONES */}
-        <div className="flex gap-1 mb-1">
+        <div className="flex gap-1 mb-1.5">
           {["Interesado", "Registrado"].includes(lead.estado) && (
             <>
               <button
                 onClick={() => onUpdateLead(lead.id, "doc1", !lead.doc1)}
-                className={`flex-1 py-0.5 rounded border text-[6.5px] font-black ${lead.doc1 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-slate-50 text-slate-400"}`}
+                className={`flex-1 py-0.5 rounded border text-[6px] font-black ${lead.doc1 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-slate-50 text-slate-400"}`}
               >
                 {lead.situacion === "Autonomo" ? "REC" : "NOM"}
               </button>
               <button
                 onClick={() => onUpdateLead(lead.id, "doc2", !lead.doc2)}
-                className={`flex-1 py-0.5 rounded border text-[6.5px] font-black ${lead.doc2 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-slate-50 text-slate-400"}`}
+                className={`flex-1 py-0.5 rounded border text-[6px] font-black ${lead.doc2 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-slate-50 text-slate-400"}`}
               >
                 {lead.situacion === "Autonomo" ? "IAE" : "CON"}
               </button>
@@ -165,7 +162,7 @@ export default function KanbanView({
                   onClick={() =>
                     onUpdateLead(lead.id, "tieneUsuarios", !lead.tieneUsuarios)
                   }
-                  className={`flex-1 py-0.5 rounded border text-[6.5px] font-black ${lead.tieneUsuarios ? "bg-sky-50 text-sky-600 border-sky-200" : "bg-slate-50 text-slate-400"}`}
+                  className={`flex-1 py-0.5 rounded border text-[6px] font-black ${lead.tieneUsuarios ? "bg-sky-50 text-sky-600 border-sky-200" : "bg-slate-50 text-slate-400"}`}
                 >
                   🔑 ACCESOS
                 </button>
@@ -173,7 +170,7 @@ export default function KanbanView({
               {lead.status === "en curso" && (
                 <button
                   onClick={() => onFollowUp(lead)}
-                  className={`flex-1 py-0.5 rounded border text-[6.5px] font-black ${faltas === 0 ? "bg-emerald-50 text-emerald-600" : "bg-orange-50 text-orange-600"}`}
+                  className={`flex-1 py-0.5 rounded border text-[6px] font-black ${faltas === 0 ? "bg-emerald-50 text-emerald-600" : "bg-orange-50 text-orange-600"}`}
                 >
                   {faltas} FALTAS
                 </button>
@@ -181,9 +178,8 @@ export default function KanbanView({
             </>
           )}
         </div>
-
         <div className="flex justify-between items-center mt-1 pt-1 border-t border-slate-50">
-          <div className="text-[6px] font-bold text-slate-400 uppercase">
+          <div className="text-[6px] font-bold text-slate-300 uppercase">
             {lead.inicioClase && (
               <span>
                 INI:{" "}
@@ -196,7 +192,7 @@ export default function KanbanView({
           </div>
           <button
             onClick={() => onEditLead(lead)}
-            className="text-[7px] font-black text-indigo-500 hover:underline"
+            className="text-[7px] font-black text-indigo-500"
           >
             PERFIL
           </button>
@@ -206,28 +202,33 @@ export default function KanbanView({
   };
 
   return (
-    <div className="flex gap-3 h-full pb-20 overflow-x-auto p-1 custom-scrollbar items-start">
+    <div className="flex gap-3 h-[calc(100vh-170px)] overflow-x-auto custom-scroll-x p-1 items-start">
       {columns.map((col) => (
         <div
           key={col.id}
-          className="flex-shrink-0 w-[200px] flex flex-col max-h-full"
+          className="flex-shrink-0 w-[200px] flex flex-col h-full"
           onDrop={(e) => handleDrop(e, col.id)}
           onDragOver={handleDragOver}
         >
           <div
-            className={`px-2.5 py-1.5 rounded-lg border shadow-sm mb-1.5 flex justify-between items-center ${col.color}`}
+            className={`px-2.5 py-1.5 rounded-xl border shadow-sm mb-2 flex justify-between items-center ${col.color}`}
           >
             <h3 className="text-[8px] font-black uppercase tracking-widest">
               {col.title}
             </h3>
-            <span className="bg-white/60 px-1.5 py-0.5 rounded text-[7.5px] font-black shadow-sm">
+            <span className="bg-white/60 px-1.5 py-0.5 rounded-lg text-[7.5px] font-black shadow-sm">
               {leads.filter(col.filter).length}
             </span>
           </div>
-          <div className="flex-1 overflow-y-auto custom-scrollbar rounded-xl border-2 border-dashed border-transparent hover:border-indigo-200 transition-colors bg-slate-50/50 p-1 min-h-[150px]">
+          <div className="flex-1 overflow-y-auto hide-scroll-y rounded-xl bg-slate-50/50 p-1 border border-transparent hover:border-slate-200 transition-colors">
             {leads.filter(col.filter).map((lead) => (
               <LeadCard key={lead.id} lead={lead} />
             ))}
+            {leads.filter(col.filter).length === 0 && (
+              <div className="h-full flex items-center justify-center opacity-20">
+                <span className="text-[8px] font-black uppercase">Vacío</span>
+              </div>
+            )}
           </div>
         </div>
       ))}
