@@ -3,25 +3,20 @@ import React, { useState, useEffect } from "react";
 export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Actualizar el reloj cada minuto para cálculos de atrasos
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
 
-  // --- LÓGICA DE FILTRADO INTELIGENTE ---
-
-  // Fechas límite
   const hoyInicio = new Date();
   hoyInicio.setHours(0, 0, 0, 0);
   const hoyFin = new Date();
   hoyFin.setHours(23, 59, 59, 999);
 
-  // 1. LLAMADAS (Solo Agendados con fecha)
+  // 1. LLAMADAS
   const llamadas = leads.filter(
     (l) => l.estado === "Agendado" && l.fechaLlamada,
   );
-
   const llamadasVencidas = llamadas
     .filter((l) => new Date(l.fechaLlamada) < hoyInicio)
     .sort((a, b) => new Date(a.fechaLlamada) - new Date(b.fechaLlamada));
@@ -36,31 +31,32 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
     .filter((l) => new Date(l.fechaLlamada) > hoyFin)
     .sort((a, b) => new Date(a.fechaLlamada) - new Date(b.fechaLlamada));
 
-  // 2. ALERTAS DE RIESGO COMERCIAL (Alumnos en curso con EXACTAMENTE 2 faltas)
+  // 2. ALERTAS DE RIESGO
   const alertasRiesgo = leads.filter((l) => {
     if (l.estado !== "Inscrito" || l.status !== "en curso") return false;
     const faltas = 20 - (l.asistencia || []).filter((d) => d).length;
-    return faltas === 2; // A 1 falta de perder la comisión
+    return faltas === 2;
   });
 
-  // 3. MATRÍCULAS ESTANCADAS (Faltan Docs o Accesos)
+  // 3. MATRÍCULAS ESTANCADAS (NUEVA LÓGICA CON 'REGISTRADOS')
   const matriculasPendientes = leads.filter((l) => {
-    if (l.estado !== "Inscrito" || l.status !== "pendiente") return false;
-    return !l.doc1 || !l.doc2 || !l.tieneUsuarios;
+    // Si está registrado pero faltan documentos
+    if (l.estado === "Registrado") return !l.doc1 || !l.doc2;
+    // Si ya está matriculado (pendiente) pero le falta el acceso
+    if (l.estado === "Inscrito" && l.status === "pendiente")
+      return !l.tieneUsuarios;
+    return false;
   });
 
-  // --- UTILIDADES ---
   const handleWhatsApp = (phone) => {
     window.open(`https://wa.me/34${phone.replace(/\s+/g, "")}`, "_blank");
   };
-
   const formatHora = (fechaString) => {
     return new Date(fechaString).toLocaleTimeString("es-ES", {
       hour: "2-digit",
       minute: "2-digit",
     });
   };
-
   const formatFechaCorta = (fechaString) => {
     return new Date(fechaString).toLocaleDateString("es-ES", {
       day: "2-digit",
@@ -68,11 +64,9 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
     });
   };
 
-  // --- SUB-COMPONENTE: TARJETA DE TAREA ---
   const TaskCard = ({ lead, type }) => {
     return (
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden group">
-        {/* Borde izquierdo de color según tipo */}
         <div
           className={`absolute left-0 top-0 bottom-0 w-1.5 ${
             type === "urgente"
@@ -93,7 +87,6 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
               {lead.nombre}
             </h4>
 
-            {/* Contexto según el tipo de tarea */}
             {(type === "urgente" || type === "hoy" || type === "futura") && (
               <div className="flex items-center gap-1.5 mt-1">
                 <span
@@ -124,17 +117,17 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
 
             {type === "tramite" && (
               <div className="flex gap-1 mt-1">
-                {!lead.doc1 && (
+                {lead.estado === "Registrado" && !lead.doc1 && (
                   <span className="text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded uppercase">
                     Falta {lead.situacion === "Autonomo" ? "REC" : "NOM"}
                   </span>
                 )}
-                {!lead.doc2 && (
+                {lead.estado === "Registrado" && !lead.doc2 && (
                   <span className="text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded uppercase">
                     Falta {lead.situacion === "Autonomo" ? "IAE" : "CON"}
                   </span>
                 )}
-                {!lead.tieneUsuarios && (
+                {lead.estado === "Inscrito" && !lead.tieneUsuarios && (
                   <span className="text-[8px] font-black text-sky-600 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded uppercase">
                     Falta Acceso
                   </span>
@@ -143,7 +136,6 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
             )}
           </div>
 
-          {/* Botones de Acción */}
           <div className="flex flex-col gap-1.5">
             <button
               onClick={() => handleWhatsApp(lead.whatsapp)}
@@ -179,7 +171,6 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
 
   return (
     <div className="max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
-      {/* CABECERA */}
       <div className="mb-6 px-2">
         <h2 className="text-xl font-black text-slate-800 uppercase tracking-widest italic">
           Centro de Mando
@@ -190,7 +181,6 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* COLUMNA 1: VENTAS (LLAMADAS) */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
             <span className="text-xl">📞</span>
@@ -202,7 +192,6 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
             </span>
           </div>
 
-          {/* Vencidas */}
           {llamadasVencidas.length > 0 && (
             <div className="space-y-2">
               <h4 className="text-[9px] font-black text-rose-500 uppercase tracking-widest flex items-center gap-1">
@@ -215,7 +204,6 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
             </div>
           )}
 
-          {/* Hoy */}
           {llamadasHoy.length > 0 && (
             <div className="space-y-2 mt-4">
               <h4 className="text-[9px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1">
@@ -237,7 +225,6 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
           )}
         </div>
 
-        {/* COLUMNA 2: RETENCIÓN (ALERTA FALTAS) */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
             <span className="text-xl">🚨</span>
@@ -248,17 +235,13 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
               {alertasRiesgo.length}
             </span>
           </div>
-
           <p className="text-[8.5px] font-bold text-slate-400 uppercase leading-relaxed mb-2">
             Estos alumnos tienen 2 faltas. Una falta más y perderás la comisión.
-            ¡Llámalos ya!
           </p>
-
           <div className="space-y-2">
             {alertasRiesgo.map((l) => (
               <TaskCard key={l.id} lead={l} type="riesgo" />
             ))}
-
             {alertasRiesgo.length === 0 && (
               <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center">
                 <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">
@@ -269,7 +252,6 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
           </div>
         </div>
 
-        {/* COLUMNA 3: OPERACIONES (TRÁMITES PENDIENTES) */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
             <span className="text-xl">⏳</span>
@@ -280,17 +262,14 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
               {matriculasPendientes.length}
             </span>
           </div>
-
           <p className="text-[8.5px] font-bold text-slate-400 uppercase leading-relaxed mb-2">
-            Alumnos inscritos pero que no pueden iniciar porque les faltan
-            documentos o accesos.
+            Alumnos que no pueden iniciar porque les faltan documentos o
+            accesos.
           </p>
-
           <div className="space-y-2">
             {matriculasPendientes.map((l) => (
               <TaskCard key={l.id} lead={l} type="tramite" />
             ))}
-
             {matriculasPendientes.length === 0 && (
               <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
@@ -302,7 +281,6 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
         </div>
       </div>
 
-      {/* SECCIÓN INFERIOR: PRÓXIMAS LLAMADAS (Ocultas para no generar estrés, pero disponibles) */}
       {llamadasFuturas.length > 0 && (
         <div className="mt-12 pt-6 border-t border-slate-200">
           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">

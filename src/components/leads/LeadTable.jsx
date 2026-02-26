@@ -143,7 +143,11 @@ export default function LeadTable({
 
               let rowColorClass = "bg-slate-50/30";
               let borderColor = "border-l-transparent";
-              if (lead.estado === "Inscrito") {
+
+              if (lead.estado === "Registrado") {
+                rowColorClass = "bg-purple-50/40";
+                borderColor = "border-l-purple-400";
+              } else if (lead.estado === "Inscrito") {
                 if (lead.status === "no apto") {
                   rowColorClass = "bg-rose-50/40";
                   borderColor = "border-l-rose-500";
@@ -334,13 +338,12 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* CÁPSULA 3: ESTADO Y TEMPERATURA (NUEVO DISEÑO LADO A LADO) */}
+                  {/* CÁPSULA 3: ESTADO */}
                   <td className="p-0.5 align-top w-[120px]">
                     <div
                       className={`${capsuleStyle} justify-center items-center ${isRowActive ? "z-50" : "z-0"}`}
                     >
                       <div className="flex items-center gap-1 w-full justify-center">
-                        {/* Selector de Estado */}
                         <div className="flex-1 min-w-0">
                           <AccordionSelect
                             value={lead.estado}
@@ -355,6 +358,7 @@ export default function LeadTable({
                             options={[
                               { value: "Agendado", label: "Agendado" },
                               { value: "Interesado", label: "Interesado" },
+                              { value: "Registrado", label: "Registrado" }, // NUEVA OPCIÓN
                               { value: "Inscrito", label: "Matriculado" },
                               {
                                 value: "No Interesado",
@@ -366,11 +370,13 @@ export default function LeadTable({
                               const c =
                                 v === "Inscrito"
                                   ? "text-emerald-700 bg-emerald-100 border-emerald-200"
-                                  : v === "No Interesado"
-                                    ? "text-red-600 bg-red-50 border-red-200"
-                                    : v === "Interesado"
-                                      ? "text-violet-700 bg-violet-50 border-violet-200"
-                                      : "text-sky-700 bg-sky-50 border-sky-200";
+                                  : v === "Registrado"
+                                    ? "text-purple-700 bg-purple-100 border-purple-200"
+                                    : v === "No Interesado"
+                                      ? "text-red-600 bg-red-50 border-red-200"
+                                      : v === "Interesado"
+                                        ? "text-violet-700 bg-violet-50 border-violet-200"
+                                        : "text-sky-700 bg-sky-50 border-sky-200";
                               const displayLabel =
                                 v === "Inscrito"
                                   ? "Matriculado"
@@ -388,7 +394,6 @@ export default function LeadTable({
                           />
                         </div>
 
-                        {/* Selector de Temperatura (Solo Ícono) */}
                         {(lead.estado === "Agendado" ||
                           lead.estado === "Interesado") && (
                           <div className="w-[24px] shrink-0">
@@ -443,7 +448,7 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* CÁPSULA 4: ESTATUS (SOLO INSCRITOS) */}
+                  {/* CÁPSULA 4: ESTATUS */}
                   <td className="p-0.5 align-top w-[110px]">
                     <div
                       className={`${capsuleStyle} justify-center items-center ${isRowActive ? "z-50" : "z-0"}`}
@@ -580,6 +585,46 @@ export default function LeadTable({
                               </span>
                             )}
                           />
+                        </div>
+                      )}
+
+                      {/* NUEVO: ESTADO REGISTRADO PIDE DOCUMENTOS DIRECTO EN LA TABLA */}
+                      {lead.estado === "Registrado" && (
+                        <div className="flex flex-col items-center gap-1.5 w-full">
+                          <span className="text-[6.5px] font-black text-purple-400 uppercase tracking-widest flex items-center gap-0.5">
+                            <svg
+                              className="w-2 h-2"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2.5}
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                              />
+                            </svg>
+                            Documentación
+                          </span>
+                          <div className="flex gap-1 w-full">
+                            <button
+                              onClick={() =>
+                                onUpdateLead(lead.id, "doc1", !lead.doc1)
+                              }
+                              className={`flex-1 py-1.5 rounded-lg border text-[8px] font-black transition-colors ${lead.doc1 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
+                            >
+                              {lead.situacion === "Autonomo" ? "REC" : "NOM"}
+                            </button>
+                            <button
+                              onClick={() =>
+                                onUpdateLead(lead.id, "doc2", !lead.doc2)
+                              }
+                              className={`flex-1 py-1.5 rounded-lg border text-[8px] font-black transition-colors ${lead.doc2 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
+                            >
+                              {lead.situacion === "Autonomo" ? "IAE" : "CON"}
+                            </button>
+                          </div>
                         </div>
                       )}
 

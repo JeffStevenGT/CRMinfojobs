@@ -140,7 +140,6 @@ export default function CrmDashboard() {
     }
   };
 
-  // --- FILTRADO EXACTO A TUS ESTADOS ---
   const filteredLeads = leadsCLM
     .filter((l) => {
       const b = searchTerm.toLowerCase();
@@ -153,6 +152,7 @@ export default function CrmDashboard() {
       if (viewMode === "kanban" || tableFilter === "todos") return true;
       if (tableFilter === "agendados") return l.estado === "Agendado";
       if (tableFilter === "interesados") return l.estado === "Interesado";
+      if (tableFilter === "registrados") return l.estado === "Registrado";
       if (tableFilter === "matriculados")
         return l.estado === "Inscrito" && l.status === "pendiente";
       if (tableFilter === "curso")
@@ -174,10 +174,12 @@ export default function CrmDashboard() {
       return dateB - dateA;
     });
 
-  // --- CONTADORES EXACTOS PARA LOS BOTONES ---
   const countAgendados = leadsCLM.filter((l) => l.estado === "Agendado").length;
   const countInteresados = leadsCLM.filter(
     (l) => l.estado === "Interesado",
+  ).length;
+  const countRegistrados = leadsCLM.filter(
+    (l) => l.estado === "Registrado",
   ).length;
   const countMatriculados = leadsCLM.filter(
     (l) => l.estado === "Inscrito" && l.status === "pendiente",
@@ -197,7 +199,6 @@ export default function CrmDashboard() {
 
   return (
     <div className="flex h-screen bg-[#FDFDFD] font-sans overflow-hidden relative">
-      {/* TOAST DE NOTIFICACIÓN */}
       {toast.show && (
         <div className="fixed bottom-10 right-10 z-[300] animate-in slide-in-from-bottom-5 fade-in duration-300">
           <div
@@ -258,7 +259,6 @@ export default function CrmDashboard() {
                 </div>
               </div>
 
-              {/* BARRA DE FILTROS ESPEJO DEL KANBAN */}
               {viewMode === "table" && (
                 <div className="flex items-center gap-2 px-2 mt-2 overflow-x-auto custom-scrollbar pb-1">
                   <button
@@ -272,7 +272,6 @@ export default function CrmDashboard() {
                       {leadsCLM.length}
                     </span>
                   </button>
-
                   <button
                     onClick={() => setTableFilter("agendados")}
                     className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${tableFilter === "agendados" ? "bg-slate-500 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-50"}`}
@@ -284,7 +283,6 @@ export default function CrmDashboard() {
                       {countAgendados}
                     </span>
                   </button>
-
                   <button
                     onClick={() => setTableFilter("interesados")}
                     className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${tableFilter === "interesados" ? "bg-blue-500 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-blue-50"}`}
@@ -296,7 +294,17 @@ export default function CrmDashboard() {
                       {countInteresados}
                     </span>
                   </button>
-
+                  <button
+                    onClick={() => setTableFilter("registrados")}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${tableFilter === "registrados" ? "bg-purple-500 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-purple-50"}`}
+                  >
+                    🪪 Registrados{" "}
+                    <span
+                      className={`px-1.5 py-0.5 rounded-md text-[8px] ${tableFilter === "registrados" ? "bg-purple-400" : "bg-slate-100"}`}
+                    >
+                      {countRegistrados}
+                    </span>
+                  </button>
                   <button
                     onClick={() => setTableFilter("matriculados")}
                     className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${tableFilter === "matriculados" ? "bg-amber-500 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-amber-50"}`}
@@ -308,7 +316,6 @@ export default function CrmDashboard() {
                       {countMatriculados}
                     </span>
                   </button>
-
                   <button
                     onClick={() => setTableFilter("curso")}
                     className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${tableFilter === "curso" ? "bg-indigo-500 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-indigo-50"}`}
@@ -320,7 +327,6 @@ export default function CrmDashboard() {
                       {countCurso}
                     </span>
                   </button>
-
                   <button
                     onClick={() => setTableFilter("finalizados")}
                     className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${tableFilter === "finalizados" ? "bg-emerald-500 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-emerald-50"}`}
@@ -332,7 +338,6 @@ export default function CrmDashboard() {
                       {countFinalizados}
                     </span>
                   </button>
-
                   <button
                     onClick={() => setTableFilter("perdidos")}
                     className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${tableFilter === "perdidos" ? "bg-rose-500 text-white shadow-md" : "bg-white text-slate-500 border border-slate-200 hover:bg-rose-50"}`}
@@ -415,9 +420,6 @@ export default function CrmDashboard() {
         </div>
       </main>
 
-      {/* ----------------------------------------------------- */}
-      {/* MICRO-MODAL: PANEL OPERATIVO (SOLO INSCRITOS)         */}
-      {/* ----------------------------------------------------- */}
       {manageModalLeadId &&
         (() => {
           const activeLead = leadsCLM.find((l) => l.id === manageModalLeadId);
@@ -431,7 +433,6 @@ export default function CrmDashboard() {
                 className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100"
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Cabecera Limpia */}
                 <div className="p-6 pb-4 flex justify-between items-center border-b border-slate-50">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-500 shadow-inner">
@@ -479,7 +480,6 @@ export default function CrmDashboard() {
                 </div>
 
                 <div className="p-6 space-y-4 bg-slate-50/50">
-                  {/* Tarjeta Interna: FECHAS */}
                   <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100/60">
                     <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
                       <svg
@@ -494,7 +494,7 @@ export default function CrmDashboard() {
                           strokeWidth={2}
                           d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                         />
-                      </svg>
+                      </svg>{" "}
                       Fechas del Curso
                     </h4>
                     <div className="grid grid-cols-2 gap-3">
@@ -535,7 +535,6 @@ export default function CrmDashboard() {
                     </div>
                   </div>
 
-                  {/* Tarjeta Interna: DOCUMENTOS */}
                   <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100/60">
                     <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
                       <svg
@@ -550,7 +549,7 @@ export default function CrmDashboard() {
                           strokeWidth={2}
                           d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                         />
-                      </svg>
+                      </svg>{" "}
                       Documentación
                     </h4>
                     <div className="flex gap-2">
@@ -619,7 +618,6 @@ export default function CrmDashboard() {
                     </div>
                   </div>
 
-                  {/* Tarjeta Interna: ENTREGABLES */}
                   <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100/60">
                     <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
                       <svg
@@ -634,7 +632,7 @@ export default function CrmDashboard() {
                           strokeWidth={2}
                           d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
                         />
-                      </svg>
+                      </svg>{" "}
                       Entregables
                     </h4>
                     <div className="flex gap-2">
@@ -704,7 +702,6 @@ export default function CrmDashboard() {
                   </div>
                 </div>
 
-                {/* Botón Guardar Inferior */}
                 <div className="p-5 bg-white border-t border-slate-100">
                   <button
                     onClick={() => setManageModalLeadId(null)}
@@ -718,7 +715,6 @@ export default function CrmDashboard() {
           );
         })()}
 
-      {/* MODAL FINALIZAR CURSO */}
       {finalizeModal.open && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl p-6 border border-slate-100">
@@ -731,11 +727,10 @@ export default function CrmDashboard() {
                 {finalizeModal.lead.nombre}
               </span>
             </p>
-
             <form onSubmit={handleFinalizeSave} className="space-y-4">
               <div className="space-y-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                  Fecha de Inicio del Curso
+                  Fecha de Inicio
                 </label>
                 <input
                   required
