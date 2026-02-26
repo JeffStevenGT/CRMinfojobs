@@ -14,7 +14,6 @@ import {
   addDoc,
   updateDoc,
   doc,
-  deleteDoc,
 } from "firebase/firestore";
 
 export default function CrmDashboard() {
@@ -92,7 +91,7 @@ export default function CrmDashboard() {
           campo,
         )
       )
-        notify("Guardado");
+        notify("Dato Guardado");
     } catch (e) {
       notify("Error", "error");
     }
@@ -111,12 +110,16 @@ export default function CrmDashboard() {
       (a, b) => new Date(b.fechaCreacion || 0) - new Date(a.fechaCreacion || 0),
     );
 
+  // --- CLASES UNIFICADAS ---
+  const containerStyle =
+    "bg-slate-200/40 backdrop-blur-sm p-1 rounded-2xl border border-slate-200 flex items-center gap-1 shadow-inner";
+  const btnBase =
+    "px-5 py-2 rounded-xl text-[9.5px] font-black uppercase tracking-widest transition-all duration-300 active:scale-95";
+
   return (
     <div className="flex h-screen bg-[#FDFDFD] font-sans overflow-hidden relative">
       {toast.show && (
-        <div
-          className={`fixed bottom-10 right-10 z-[700] px-6 py-3 rounded-full shadow-2xl bg-slate-800 text-white animate-in fade-in slide-in-from-bottom-4`}
-        >
+        <div className="fixed bottom-10 right-10 z-[700] px-6 py-3 rounded-full shadow-2xl bg-slate-800 text-white animate-in fade-in slide-in-from-bottom-4">
           <span className="text-[10px] font-black uppercase tracking-widest">
             {toast.message}
           </span>
@@ -134,59 +137,59 @@ export default function CrmDashboard() {
 
         <div className="flex-1 overflow-auto p-8 custom-scrollbar">
           {activeTab === "clientes-clm" && (
-            <div className="max-w-[1600px] mx-auto space-y-4 flex flex-col h-full">
-              <div className="flex justify-between items-end px-2">
-                <div>
-                  <h1 className="text-xl font-black text-slate-800 uppercase tracking-widest italic">
-                    Panel de Gestión
+            <div className="max-w-[1600px] mx-auto space-y-6 flex flex-col h-full">
+              <div className="flex justify-between items-center px-2">
+                <div className="space-y-1">
+                  <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight italic">
+                    Operaciones
                   </h1>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">
-                    Control de Campañas Activas
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+                    Multi-Proyecto
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  {/* FILTRO PROYECTO CON COLORES DINÁMICOS */}
-                  <div className="bg-white p-1 rounded-2xl border border-slate-200 flex items-center shadow-sm">
+                <div className="flex items-center gap-4">
+                  {/* SELECTOR DE CAMPAÑAS UNIFICADO */}
+                  <div className={containerStyle}>
                     <button
                       onClick={() => setProjectFilter("todos")}
-                      className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${projectFilter === "todos" ? "bg-slate-800 text-white shadow-md" : "text-slate-400 hover:text-slate-600"}`}
+                      className={`${btnBase} ${projectFilter === "todos" ? "bg-slate-800 text-white shadow-md" : "text-slate-400 hover:text-slate-600"}`}
                     >
                       🌎 Todos
                     </button>
-
                     <button
                       onClick={() => setProjectFilter("CLM")}
-                      className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${projectFilter === "CLM" ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" : "text-slate-400 hover:text-indigo-400"}`}
+                      className={`${btnBase} ${projectFilter === "CLM" ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" : "text-slate-400 hover:text-indigo-500"}`}
                     >
                       CLM
                     </button>
-
                     <button
                       onClick={() => setProjectFilter("Lideres")}
-                      className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${projectFilter === "Lideres" ? "bg-amber-500 text-white shadow-md shadow-amber-100" : "text-slate-400 hover:text-amber-500"}`}
+                      className={`${btnBase} ${projectFilter === "Lideres" ? "bg-amber-500 text-white shadow-md shadow-amber-100" : "text-slate-400 hover:text-amber-500"}`}
                     >
                       LÍDERES
                     </button>
-
                     <button
                       onClick={() => setProjectFilter("Sandetel")}
-                      className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${projectFilter === "Sandetel" ? "bg-cyan-500 text-white shadow-md shadow-cyan-100" : "text-slate-400 hover:text-cyan-500"}`}
+                      className={`${btnBase} ${projectFilter === "Sandetel" ? "bg-cyan-500 text-white shadow-md shadow-cyan-100" : "text-slate-400 hover:text-cyan-500"}`}
                     >
                       SANDETEL
                     </button>
                   </div>
 
-                  <div className="bg-slate-200/50 p-1 rounded-xl flex items-center border border-slate-200">
+                  <div className="h-8 w-px bg-slate-200 mx-1"></div>
+
+                  {/* SELECTOR DE VISTA UNIFICADO (MISMO ESTILO) */}
+                  <div className={containerStyle}>
                     <button
                       onClick={() => setViewMode("table")}
-                      className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase ${viewMode === "table" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400"}`}
+                      className={`${btnBase} ${viewMode === "table" ? "bg-white text-indigo-600 shadow-md" : "text-slate-400 hover:text-slate-600"}`}
                     >
                       Tabla
                     </button>
                     <button
                       onClick={() => setViewMode("kanban")}
-                      className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase ${viewMode === "kanban" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400"}`}
+                      className={`${btnBase} ${viewMode === "kanban" ? "bg-white text-indigo-600 shadow-md" : "text-slate-400 hover:text-slate-600"}`}
                     >
                       Tablero
                     </button>
@@ -197,9 +200,9 @@ export default function CrmDashboard() {
                       setLeadToEdit(null);
                       setIsModalOpen(true);
                     }}
-                    className="bg-[#4F46E5] text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all"
+                    className="bg-[#4F46E5] text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:shadow-indigo-200 active:scale-95 transition-all"
                   >
-                    + Nuevo Lead
+                    + Nuevo Registro
                   </button>
                 </div>
               </div>
@@ -217,9 +220,6 @@ export default function CrmDashboard() {
                       setLeadToFollow(l);
                       setIsFollowUpOpen(true);
                     }}
-                    onDeleteLead={() => {}}
-                    onViewComment={() => {}}
-                    onFinalize={() => {}}
                     onManageLead={(l) => setManageModalLeadId(l.id)}
                   />
                 ) : (
@@ -261,6 +261,7 @@ export default function CrmDashboard() {
         </div>
       </main>
 
+      {/* MODALES SE MANTIENEN IGUAL */}
       {isModalOpen && (
         <LeadFormModal
           leads={leadsCLM}
