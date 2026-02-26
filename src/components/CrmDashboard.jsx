@@ -66,6 +66,7 @@ export default function CrmDashboard() {
   const handleUpdateLead = async (id, campo, valor) => {
     try {
       await updateDoc(doc(db, "leads", id), { [campo]: valor });
+      // Evitamos notificaciones invasivas para los clics rápidos
       if (
         campo !== "respondioWpp" &&
         campo !== "doc1" &&
@@ -191,6 +192,7 @@ export default function CrmDashboard() {
 
   return (
     <div className="flex h-screen bg-[#FDFDFD] font-sans overflow-hidden relative">
+      {/* TOAST DE NOTIFICACIÓN */}
       {toast.show && (
         <div className="fixed bottom-10 right-10 z-[300] animate-in slide-in-from-bottom-5 fade-in duration-300">
           <div
@@ -369,7 +371,7 @@ export default function CrmDashboard() {
       </main>
 
       {/* ----------------------------------------------------- */}
-      {/* MODAL REDISEÑADO: PANEL ALUMNO "SOFT-UI"              */}
+      {/* MICRO-MODAL: PANEL OPERATIVO (SOLO INSCRITOS)         */}
       {/* ----------------------------------------------------- */}
       {manageModalLeadId &&
         (() => {
@@ -384,7 +386,7 @@ export default function CrmDashboard() {
                 className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100"
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Cabecera Limpia (Blanca) */}
+                {/* Cabecera Limpia */}
                 <div className="p-6 pb-4 flex justify-between items-center border-b border-slate-50">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-500 shadow-inner">
@@ -431,7 +433,6 @@ export default function CrmDashboard() {
                   </button>
                 </div>
 
-                {/* Cuerpo con Fondo Gris "Cards inside Cards" */}
                 <div className="p-6 space-y-4 bg-slate-50/50">
                   {/* Tarjeta Interna: FECHAS */}
                   <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100/60">
@@ -573,7 +574,7 @@ export default function CrmDashboard() {
                     </div>
                   </div>
 
-                  {/* Tarjeta Interna: ENTREGABLES */}
+                  {/* Tarjeta Interna: ENTREGABLES (AHORA SIMÉTRICO A DOCUMENTOS) */}
                   <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100/60">
                     <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
                       <svg
@@ -591,7 +592,7 @@ export default function CrmDashboard() {
                       </svg>
                       Entregables
                     </h4>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="flex gap-2">
                       <button
                         onClick={() =>
                           handleUpdateLead(
@@ -600,24 +601,60 @@ export default function CrmDashboard() {
                             !activeLead.tieneUsuarios,
                           )
                         }
-                        className={`w-full py-2 rounded-xl border text-[10px] font-black transition-all flex justify-center items-center gap-1.5 shadow-sm active:scale-95 ${activeLead.tieneUsuarios ? "bg-sky-500 text-white border-sky-600" : "bg-white text-slate-400 border-slate-200 hover:bg-slate-50"}`}
+                        className={`flex-1 py-2 rounded-xl border text-[10px] font-black transition-all flex justify-center items-center gap-1.5 active:scale-95 ${activeLead.tieneUsuarios ? "bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
                       >
-                        🔑 ACCESOS {activeLead.tieneUsuarios ? "OK" : "PND"}
+                        <div
+                          className={`w-3 h-3 rounded-[3px] flex items-center justify-center border transition-colors ${activeLead.tieneUsuarios ? "bg-emerald-500 border-emerald-500" : "bg-white border-slate-300"}`}
+                        >
+                          {activeLead.tieneUsuarios && (
+                            <svg
+                              className="w-2 h-2 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={4}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                        ACCESOS
                       </button>
-                      <select
-                        value={activeLead.regalo || "no"}
-                        onChange={(e) =>
+                      <button
+                        onClick={() =>
                           handleUpdateLead(
                             activeLead.id,
                             "regalo",
-                            e.target.value,
+                            activeLead.regalo === "si" ? "no" : "si",
                           )
                         }
-                        className={`w-full px-2 py-2 border rounded-xl text-[10px] font-black uppercase outline-none text-center shadow-sm cursor-pointer transition-colors ${activeLead.regalo === "si" ? "bg-purple-500 text-white border-purple-600" : "bg-white text-slate-400 border-slate-200 hover:bg-slate-50"}`}
+                        className={`flex-1 py-2 rounded-xl border text-[10px] font-black transition-all flex justify-center items-center gap-1.5 active:scale-95 ${activeLead.regalo === "si" ? "bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
                       >
-                        <option value="no">🎁 Pendiente</option>
-                        <option value="si">🎁 Entregado</option>
-                      </select>
+                        <div
+                          className={`w-3 h-3 rounded-[3px] flex items-center justify-center border transition-colors ${activeLead.regalo === "si" ? "bg-emerald-500 border-emerald-500" : "bg-white border-slate-300"}`}
+                        >
+                          {activeLead.regalo === "si" && (
+                            <svg
+                              className="w-2 h-2 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={4}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                        REGALO
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -636,7 +673,7 @@ export default function CrmDashboard() {
           );
         })()}
 
-      {/* MODAL FINALIZAR */}
+      {/* MODAL FINALIZAR CURSO */}
       {finalizeModal.open && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl p-6 border border-slate-100">
