@@ -7,7 +7,7 @@ import AgendaView from "./agenda/AgendaView";
 import ReportsView from "./reports/ReportsView";
 import LeadFormModal from "./leads/LeadFormModal";
 import FollowUpModal from "./leads/FollowUpModal";
-import { db } from "../firebase.js";
+import { db } from "../firebase";
 import {
   collection,
   onSnapshot,
@@ -17,17 +17,19 @@ import {
 } from "firebase/firestore";
 
 export default function CrmDashboard() {
+  // --- ESTADOS ---
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState("clientes-clm");
   const [leadsCLM, setLeadsCLM] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("clientes-clm");
   const [viewMode, setViewMode] = useState("kanban");
   const [projectFilter, setProjectFilter] = useState("todos");
 
+  // Modales
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFollowUpOpen, setIsFollowUpOpen] = useState(false);
   const [leadToEdit, setLeadToEdit] = useState(null);
   const [leadToFollow, setLeadToFollow] = useState(null);
-  const [manageModalLeadId, setManageModalLeadId] = useState(null);
   const [finalizeModal, setFinalizeModal] = useState({
     open: false,
     lead: null,
@@ -77,17 +79,7 @@ export default function CrmDashboard() {
       setIsModalOpen(false);
       setLeadToEdit(null);
     } catch (e) {
-      notify("Error", "error");
-    }
-  };
-
-  const handleUpdateLead = async (id, campo, valor) => {
-    try {
-      await updateDoc(doc(db, "leads", id), { [campo]: valor });
-      if (!["respondioWpp", "doc1", "doc2", "tieneUsuarios"].includes(campo))
-        notify("Guardado");
-    } catch (e) {
-      notify("Error", "error");
+      notify("Error de guardado", "error");
     }
   };
 
@@ -103,18 +95,25 @@ export default function CrmDashboard() {
       (a, b) => new Date(b.fechaCreacion || 0) - new Date(a.fechaCreacion || 0),
     );
 
+  // Estilos Toggles Unificados
+  const containerStyle =
+    "bg-slate-200/40 backdrop-blur-sm p-1 rounded-2xl border border-slate-200 flex items-center gap-1 shadow-inner";
+  const btnBase =
+    "px-5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-300";
+
   return (
-    <div className="flex h-screen bg-[#FDFDFD] font-sans overflow-hidden relative text-slate-900">
-      {/* CSS PARA SCROLLBARS ELEGANTES */}
+    <div className="flex h-screen bg-[#FDFDFD] font-sans overflow-hidden text-slate-900">
+      {/* CSS GLOBAL: Quita scroll Y pero mantiene funcionalidad */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
-        .custom-scroll-x::-webkit-scrollbar { height: 8px; }
-        .custom-scroll-x::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
-        .custom-scroll-x::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; border: 2px solid #f1f5f9; }
-        .custom-scroll-x::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+        * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
+        *::-webkit-scrollbar { display: none !important; }
         
-        .hide-scroll-y::-webkit-scrollbar { width: 0px; }
+        /* Regla específica para el scroll horizontal del Tablero al pasar el mouse */
+        .board-container:hover { scrollbar-width: thin !important; }
+        .board-container:hover::-webkit-scrollbar { display: block !important; height: 6px !important; }
+        .board-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
       `,
         }}
       />
@@ -128,71 +127,79 @@ export default function CrmDashboard() {
       )}
 
       <Sidebar
-        isOpen={true}
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />
 
-      <main className="flex-1 flex flex-col min-w-0 bg-[#F9FAFB] h-full">
-        <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+      <main className="flex-1 flex flex-col min-w-0 bg-[#F9FAFB] h-full overflow-hidden">
+        <Header
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        />
 
-        {/* Contenedor principal con padding reducido para ganar espacio Y */}
-        <div className="flex-1 overflow-hidden p-4 flex flex-col">
+        <div className="flex-1 overflow-hidden p-4 lg:p-6 flex flex-col">
           {activeTab === "clientes-clm" && (
-            <div className="max-w-full mx-auto space-y-3 flex flex-col h-full w-full">
-              <div className="flex justify-between items-center px-2 shrink-0">
-                <div className="space-y-0.5">
-                  <h1 className="text-xl font-black text-slate-800 uppercase italic">
-                    Operaciones
-                  </h1>
-                  <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">
-                    Luis - CRM SENATI
-                  </p>
-                </div>
+            <div className="max-w-full mx-auto space-y-4 h-full flex flex-col w-full">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 px-2 shrink-0">
+                <h1 className="text-2xl font-black text-slate-800 uppercase italic">
+                  Directorio Operativo
+                </h1>
 
-                <div className="flex items-center gap-3 scale-90 origin-right">
-                  <div className="bg-slate-200/40 p-1 rounded-2xl border border-slate-200 flex items-center gap-1 shadow-inner">
+                <div className="flex items-center gap-3 self-end lg:self-auto scale-90 lg:scale-100 origin-right">
+                  {/* Selector de Campañas */}
+                  <div className={containerStyle}>
                     {["todos", "CLM", "Lideres", "Sandetel"].map((p) => (
                       <button
                         key={p}
                         onClick={() => setProjectFilter(p)}
-                        className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all ${projectFilter === p ? (p === "todos" ? "bg-slate-800 text-white" : p === "CLM" ? "bg-indigo-600 text-white" : p === "Lideres" ? "bg-amber-500 text-white" : "bg-cyan-500 text-white") : "text-slate-400"}`}
+                        className={`${btnBase} ${projectFilter === p ? (p === "todos" ? "bg-slate-800 text-white" : p === "CLM" ? "bg-indigo-600 text-white" : p === "Lideres" ? "bg-amber-500 text-white" : "bg-cyan-500 text-white") : "text-slate-400"}`}
                       >
-                        {p === "todos" ? "🌎 Todos" : p}
+                        {p}
                       </button>
                     ))}
                   </div>
-                  <div className="bg-slate-200/40 p-1 rounded-2xl border border-slate-200 flex items-center gap-1 shadow-inner">
+
+                  <div className="h-6 w-px bg-slate-200 mx-1"></div>
+
+                  {/* Selector de Vista (Tabla/Tablero) */}
+                  <div className={containerStyle}>
                     <button
                       onClick={() => setViewMode("table")}
-                      className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all ${viewMode === "table" ? "bg-white text-indigo-600 shadow-md" : "text-slate-400"}`}
+                      className={`${btnBase} ${viewMode === "table" ? "bg-white text-indigo-600 shadow-md" : "text-slate-400"}`}
                     >
                       Tabla
                     </button>
                     <button
                       onClick={() => setViewMode("kanban")}
-                      className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all ${viewMode === "kanban" ? "bg-white text-indigo-600 shadow-md" : "text-slate-400"}`}
+                      className={`${btnBase} ${viewMode === "kanban" ? "bg-white text-indigo-600 shadow-md" : "text-slate-400"}`}
                     >
                       Tablero
                     </button>
                   </div>
+
                   <button
                     onClick={() => {
                       setLeadToEdit(null);
                       setIsModalOpen(true);
                     }}
-                    className="bg-[#4F46E5] text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95"
+                    className="bg-[#4F46E5] text-white px-8 py-2.5 rounded-2xl text-[10px] font-black uppercase shadow-xl"
                   >
                     + Nuevo
                   </button>
                 </div>
               </div>
 
-              <div className="flex-1 min-h-0 h-full">
+              {/* Renderizado Condicional de Vistas */}
+              <div className="flex-1 min-h-0 h-full board-container overflow-x-auto overflow-y-auto">
                 {viewMode === "table" ? (
                   <LeadTable
                     leads={filteredLeads}
-                    onUpdateLead={handleUpdateLead}
+                    onUpdateLead={(id, c, v) =>
+                      updateDoc(doc(db, "leads", id), { [c]: v })
+                    }
                     onEditLead={(l) => {
                       setLeadToEdit(l);
                       setIsModalOpen(true);
@@ -202,11 +209,26 @@ export default function CrmDashboard() {
                       setIsFollowUpOpen(true);
                     }}
                     onManageLead={(l) => setManageModalLeadId(l.id)}
+                    onDeleteLead={(id) =>
+                      window.confirm("¿Eliminar?") &&
+                      deleteDoc(doc(db, "leads", id))
+                    }
+                    onViewComment={(t, c) => alert(t)}
+                    onFinalize={(l) =>
+                      setFinalizeModal({
+                        open: true,
+                        lead: l,
+                        fechaInicio: "",
+                        fechaFin: "",
+                      })
+                    }
                   />
                 ) : (
                   <KanbanView
                     leads={filteredLeads}
-                    onUpdateLead={handleUpdateLead}
+                    onUpdateLead={(id, c, v) =>
+                      updateDoc(doc(db, "leads", id), { [c]: v })
+                    }
                     onEditLead={(l) => {
                       setLeadToEdit(l);
                       setIsModalOpen(true);
@@ -228,8 +250,12 @@ export default function CrmDashboard() {
               </div>
             </div>
           )}
+
+          {activeTab === "agenda-clm" && <AgendaView leads={leadsCLM} />}
+          {activeTab === "reportes-clm" && <ReportsView leads={leadsCLM} />}
         </div>
       </main>
+
       {isModalOpen && (
         <LeadFormModal
           leads={leadsCLM}
