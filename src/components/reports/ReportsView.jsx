@@ -1,252 +1,228 @@
 import React from "react";
 
 export default function ReportsView({ leads }) {
-  // --- LÓGICA DE CÁLCULO TOTAL ---
-  const total = leads.length || 0;
-  const inscritos = leads.filter((l) => l.estado === "Inscrito").length;
-  const finalizados = leads.filter((l) => l.status === "finalizado").length;
-  const agendados = leads.filter((l) => l.estado === "Agendado").length;
-  const buzos = leads.filter((l) => l.agendaStatus === "buzo").length;
+  // 1. LÓGICA DE FILTRADO (Solo cuenta el estatus "finalizado")
+  const leadsFinalizados = leads.filter((l) => l.status === "finalizado");
 
-  // KPIs de Riesgo y Operaciones
-  const enRiesgo = leads.filter(
-    (l) => l.estado === "Inscrito" && parseInt(l.faltas) >= 3,
-  ).length;
-  const sinDocs = leads.filter(
-    (l) => l.estado === "Inscrito" && (!l.doc1 || !l.doc2),
-  ).length;
-  const sinUser = leads.filter(
-    (l) => l.estado === "Inscrito" && !l.tieneUsuarios,
-  ).length;
+  // 2. MATEMÁTICAS DE PUNTOS
+  const puntosPorInscripcion = 1.5;
+  const puntosTotales = leadsFinalizados.length * puntosPorInscripcion;
 
-  // KPIs de Origen y Calidad
-  const referidos = leads.filter((l) => l.esReferido === "si").length;
-  const tasaConversion = total > 0 ? ((inscritos / total) * 100).toFixed(1) : 0;
-  const efectividadLlamadas =
-    agendados > 0 ? (((agendados - buzos) / agendados) * 100).toFixed(1) : 0;
+  // 3. MATEMÁTICAS DE TRAMOS Y VALOR POR PUNTO
+  let valorPorPunto = 0;
+  let siguienteTramoPts = null;
+  let tramoActual = 0;
 
-  // --- FINANZAS (Ajusta tu comisión aquí) ---
-  const COMISION_VALOR = 50;
-  const comisionesAcumuladas = inscritos * COMISION_VALOR;
+  // Lógica exacta de escalado
+  if (puntosTotales >= 28) {
+    valorPorPunto = 75.0;
+    siguienteTramoPts = null;
+    tramoActual = 6;
+  } else if (puntosTotales >= 24) {
+    valorPorPunto = 62.5;
+    siguienteTramoPts = 28;
+    tramoActual = 5;
+  } else if (puntosTotales >= 20) {
+    valorPorPunto = 50.0;
+    siguienteTramoPts = 24;
+    tramoActual = 4;
+  } else if (puntosTotales >= 16) {
+    valorPorPunto = 37.5;
+    siguienteTramoPts = 20;
+    tramoActual = 3;
+  } else if (puntosTotales >= 12) {
+    valorPorPunto = 25.0;
+    siguienteTramoPts = 16;
+    tramoActual = 2;
+  } else if (puntosTotales >= 8) {
+    // Al ser de 1.5 en 1.5, esto se activa al llegar a 9 puntos (6 leads)
+    valorPorPunto = 20.0;
+    siguienteTramoPts = 12;
+    tramoActual = 1;
+  } else {
+    // Aún no llega al mínimo para comisionar
+    valorPorPunto = 0;
+    siguienteTramoPts = 8;
+    tramoActual = 0;
+  }
 
-  // Distribución por Provincia (Castilla-La Mancha)
-  const provincias = [
-    "Toledo",
-    "Albacete",
-    "Ciudad Real",
-    "Cuenca",
-    "Guadalajara",
+  // 4. COMISIÓN TOTAL
+  const comisionTotal = puntosTotales * valorPorPunto;
+
+  // 5. BARRA DE PROGRESO
+  const progreso = siguienteTramoPts
+    ? Math.min((puntosTotales / siguienteTramoPts) * 100, 100)
+    : 100;
+
+  // Definición de Tramos para la tabla de referencia
+  const tablaTramos = [
+    { nivel: 1, min: 8, max: "11.5", valor: 20.0 },
+    { nivel: 2, min: 12, max: "15.5", valor: 25.0 },
+    { nivel: 3, min: 16, max: "19.5", valor: 37.5 },
+    { nivel: 4, min: 20, max: "23.5", valor: 50.0 },
+    { nivel: 5, min: 24, max: "27.5", valor: 62.5 },
+    { nivel: 6, min: 28, max: "Más", valor: 75.0 },
   ];
-  const statsProvincias = provincias
-    .map((p) => ({
-      name: p,
-      count: leads.filter((l) => l.provincia === p).length,
-    }))
-    .sort((a, b) => b.count - a.count);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-500 pb-10">
-      {/* 1. LOS "BIG TWO" + COMISIONES */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* TARJETA DINERO (EL REY) */}
-        <div className="lg:col-span-2 bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full -mr-32 -mt-32 blur-[80px]"></div>
-          <div className="relative z-10 flex flex-col h-full justify-between">
-            <div>
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-300">
-                Comisiones Estimadas
-              </h3>
-              <div className="flex items-baseline gap-3 mt-2">
-                <span className="text-6xl font-black text-white">
-                  €{comisionesAcumuladas}
-                </span>
-                <span className="text-sm font-bold text-slate-400">
-                  Total Acumulado
-                </span>
-              </div>
-            </div>
-            <div className="mt-8 flex gap-8 border-t border-white/10 pt-6">
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase italic">
-                  Inscritos Reales
-                </p>
-                <p className="text-2xl font-black text-emerald-400">
-                  {inscritos}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase italic">
-                  Tasa de Cierre
-                </p>
-                <p className="text-2xl font-black text-indigo-400">
-                  {tasaConversion}%
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ÉXITO ACADÉMICO */}
-        <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center shadow-sm">
-          <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-3xl mb-4">
-            🏆
-          </div>
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-            Cursos Finalizados
-          </h3>
-          <span className="text-5xl font-black text-slate-800 mt-2">
-            {finalizados}
-          </span>
-          <p className="text-[9px] text-slate-400 font-bold mt-4 uppercase">
-            Meta de Calidad Lograda
-          </p>
-        </div>
+    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-12">
+      {/* CABECERA */}
+      <div className="border-b border-slate-100 pb-4 px-2">
+        <h2 className="text-xl font-black text-slate-800 uppercase tracking-widest italic">
+          Panel de Rendimiento
+        </h2>
+        <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">
+          Andina - CLM Mainjobs (Soles)
+        </p>
       </div>
 
-      {/* 2. OPERATIVIDAD Y RIESGOS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-            Leads en Riesgo
+      {/* DASHBOARD PRINCIPAL */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* TARJETA 1: VENTAS FINALIZADAS */}
+        <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-center">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            Ventas Cerradas
           </p>
-          <div className="flex items-end justify-between mt-2">
-            <span
-              className={`text-2xl font-black ${enRiesgo > 0 ? "text-rose-500" : "text-slate-300"}`}
-            >
-              {enRiesgo}
-            </span>
-            <span className="text-[8px] font-bold text-rose-400 bg-rose-50 px-2 py-0.5 rounded-full">
-              +3 Faltas
-            </span>
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-            Docs Pendientes
-          </p>
-          <div className="flex items-end justify-between mt-2">
-            <span className="text-2xl font-black text-amber-500">
-              {sinDocs}
-            </span>
-            <span className="text-[8px] font-bold text-amber-400 bg-amber-50 px-2 py-0.5 rounded-full">
-              Incompletos
-            </span>
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-            Sin Usuarios
-          </p>
-          <div className="flex items-end justify-between mt-2">
-            <span className="text-2xl font-black text-sky-500">{sinUser}</span>
-            <span className="text-[8px] font-bold text-sky-400 bg-sky-50 px-2 py-0.5 rounded-full">
-              Accesos Pend.
-            </span>
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-            Fidelidad (Referidos)
-          </p>
-          <div className="flex items-end justify-between mt-2">
-            <span className="text-2xl font-black text-indigo-500">
-              {referidos}
-            </span>
-            <span className="text-[8px] font-bold text-indigo-400 bg-indigo-50 px-2 py-0.5 rounded-full">
-              Boca a Boca
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. MÉTRICAS ESTRATÉGICAS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* RANKING PROVINCIAS */}
-        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">
-            Penetración en Castilla-La Mancha
-          </h3>
-          <div className="space-y-4">
-            {statsProvincias.map((prov) => (
-              <div key={prov.name} className="space-y-1">
-                <div className="flex justify-between text-[10px] font-bold uppercase">
-                  <span className="text-slate-600">{prov.name}</span>
-                  <span className="text-slate-400">{prov.count} Leads</span>
-                </div>
-                <div className="w-full h-1.5 bg-slate-50 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-indigo-500 rounded-full transition-all duration-1000"
-                    style={{
-                      width: `${total > 0 ? (prov.count / total) * 100 : 0}%`,
-                    }}
-                  ></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* EFICIENCIA DE LLAMADAS */}
-        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
-          <div>
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
-              Salud de la Agenda
+          <div className="flex items-end gap-2 mt-2">
+            <h3 className="text-4xl font-black text-slate-800">
+              {leadsFinalizados.length}
             </h3>
-            <p className="text-[9px] text-slate-300 font-medium uppercase">
-              Relación Contacto vs Buzos
-            </p>
+            <span className="text-xs font-bold text-slate-400 mb-1.5">
+              Finalizados
+            </span>
           </div>
-          <div className="flex items-center gap-8">
-            <div className="relative w-32 h-32">
-              <svg className="w-full h-full transform -rotate-90">
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="50"
-                  stroke="currentColor"
-                  strokeWidth="12"
-                  fill="transparent"
-                  className="text-slate-50"
-                />
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="50"
-                  stroke="currentColor"
-                  strokeWidth="12"
-                  fill="transparent"
-                  strokeDasharray={314}
-                  strokeDashoffset={314 - (314 * efectividadLlamadas) / 100}
-                  className="text-sky-500 transition-all duration-1000"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-xl font-black text-slate-800">
-                  {efectividadLlamadas}%
-                </span>
-                <span className="text-[7px] font-black uppercase text-slate-400">
-                  Éxito
-                </span>
-              </div>
+        </div>
+
+        {/* TARJETA 2: PUNTOS TOTALES */}
+        <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-center">
+          <p className="text-[10px] font-black text-sky-500 uppercase tracking-widest">
+            Puntos Acumulados
+          </p>
+          <div className="flex items-end gap-2 mt-2">
+            <h3 className="text-4xl font-black text-sky-600">
+              {puntosTotales}
+            </h3>
+            <span className="text-xs font-bold text-sky-400 mb-1.5">Pts.</span>
+          </div>
+          <p className="text-[8px] font-bold text-sky-400 uppercase mt-1">
+            1 Venta = 1.5 Puntos
+          </p>
+        </div>
+
+        {/* TARJETA 3: MULTIPLICADOR (VALOR POR PUNTO) */}
+        <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-center relative overflow-hidden">
+          <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest relative z-10">
+            Valor por Punto
+          </p>
+          <div className="flex items-end gap-2 mt-2 relative z-10">
+            <span className="text-lg font-bold text-indigo-400 mb-1">S/.</span>
+            <h3 className="text-4xl font-black text-indigo-600">
+              {valorPorPunto.toFixed(2)}
+            </h3>
+          </div>
+          {tramoActual > 0 && (
+            <div className="absolute right-4 top-4 bg-indigo-50 text-indigo-500 text-[8px] font-black px-2 py-1 rounded-lg uppercase">
+              Tramo {tramoActual}
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-sky-500"></div>
-                <span className="text-[10px] font-bold text-slate-600">
-                  Contactados: {agendados - buzos}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-orange-400"></div>
-                <span className="text-[10px] font-bold text-slate-600">
-                  Buzos: {buzos}
-                </span>
-              </div>
-              <p className="text-[9px] text-slate-400 italic leading-tight">
-                Tu efectividad al teléfono es vital para las comisiones.
+          )}
+        </div>
+
+        {/* TARJETA 4: COMISIÓN TOTAL */}
+        <div className="bg-emerald-500 rounded-[2rem] p-6 shadow-xl shadow-emerald-200 flex flex-col justify-center text-white relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 opacity-10">
+            <svg className="w-32 h-32" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+            </svg>
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-100 relative z-10">
+            Comisión Total
+          </p>
+          <div className="flex items-end gap-2 mt-2 relative z-10">
+            <span className="text-xl font-bold text-emerald-100 mb-1">S/.</span>
+            <h3 className="text-4xl font-black">
+              {comisionTotal.toLocaleString("es-PE", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </h3>
+          </div>
+        </div>
+      </div>
+
+      {/* SECCIÓN DE PROGRESO */}
+      <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
+        <div className="flex justify-between items-end mb-4">
+          <div>
+            <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest">
+              Rumbo al siguiente Tramo
+            </h3>
+            {siguienteTramoPts ? (
+              <p className="text-[10px] font-bold text-slate-400 mt-1">
+                Faltan{" "}
+                <span className="text-indigo-500">
+                  {(siguienteTramoPts - puntosTotales).toFixed(1)} puntos
+                </span>{" "}
+                para subir tu multiplicador.
               </p>
-            </div>
+            ) : (
+              <p className="text-[10px] font-bold text-emerald-500 mt-1">
+                ¡Felicidades! Has alcanzado el tramo máximo de multiplicador.
+              </p>
+            )}
           </div>
+          <div className="text-right">
+            <span className="text-2xl font-black text-indigo-600">
+              {progreso.toFixed(0)}%
+            </span>
+          </div>
+        </div>
+
+        {/* BARRA ANIMADA */}
+        <div className="w-full bg-slate-100 rounded-full h-4 overflow-hidden shadow-inner">
+          <div
+            className="bg-indigo-500 h-4 rounded-full transition-all duration-1000 ease-out relative"
+            style={{ width: `${progreso}%` }}
+          >
+            <div className="absolute inset-0 bg-white/20 w-full h-full animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+
+      {/* TABLA DE ESCALA DE COMISIONES (REFERENCIA) */}
+      <div className="bg-slate-50 rounded-[2rem] p-8 border border-slate-100">
+        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 text-center">
+          Escala de Comisiones (Soles)
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+          {tablaTramos.map((tramo) => {
+            const isActivo = tramoActual === tramo.nivel;
+            return (
+              <div
+                key={tramo.nivel}
+                className={`p-4 rounded-2xl border transition-all text-center ${
+                  isActivo
+                    ? "bg-emerald-100 border-emerald-300 shadow-sm scale-105"
+                    : "bg-white border-slate-200 opacity-70"
+                }`}
+              >
+                <p
+                  className={`text-[9px] font-black uppercase mb-1 ${isActivo ? "text-emerald-600" : "text-slate-400"}`}
+                >
+                  Tramo {tramo.nivel}
+                </p>
+                <p
+                  className={`text-sm font-black mb-1 ${isActivo ? "text-emerald-800" : "text-slate-700"}`}
+                >
+                  {tramo.min} a {tramo.max} pts
+                </p>
+                <div
+                  className={`text-[11px] font-bold py-1 rounded-lg ${isActivo ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-500"}`}
+                >
+                  S/. {tramo.valor.toFixed(2)} / pt
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
