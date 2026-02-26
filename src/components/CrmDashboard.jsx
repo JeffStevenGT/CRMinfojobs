@@ -36,7 +36,7 @@ export default function CrmDashboard() {
     fechaInicio: "",
     fechaFin: "",
   });
-  const [manageModalLeadId, setManageModalLeadId] = useState(null); // NUEVO: Controla el Micro-Modal
+  const [manageModalLeadId, setManageModalLeadId] = useState(null);
   const [viewComment, setViewComment] = useState({
     open: false,
     text: "",
@@ -325,7 +325,7 @@ export default function CrmDashboard() {
                         fechaFin: "",
                       })
                     }
-                    onManageLead={(lead) => setManageModalLeadId(lead.id)} // ABRE EL MICRO-MODAL
+                    onManageLead={(lead) => setManageModalLeadId(lead.id)}
                   />
                 ) : (
                   <KanbanView
@@ -369,7 +369,7 @@ export default function CrmDashboard() {
       </main>
 
       {/* ----------------------------------------------------- */}
-      {/* NUEVO MICRO-MODAL: PANEL OPERATIVO (SOLO INSCRITOS)   */}
+      {/* MODAL REDISEÑADO: PANEL ALUMNO "SOFT-UI"              */}
       {/* ----------------------------------------------------- */}
       {manageModalLeadId &&
         (() => {
@@ -377,26 +377,46 @@ export default function CrmDashboard() {
           if (!activeLead) return null;
           return (
             <div
-              className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+              className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300"
               onClick={() => setManageModalLeadId(null)}
             >
               <div
-                className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100"
+                className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="bg-[#4F46E5] p-5 text-center text-white relative">
-                  <h3 className="text-[14px] font-black uppercase tracking-widest mb-0.5">
-                    Panel Operativo
-                  </h3>
-                  <p className="text-[10px] font-bold opacity-80 uppercase">
-                    {activeLead.nombre}
-                  </p>
+                {/* Cabecera Limpia (Blanca) */}
+                <div className="p-6 pb-4 flex justify-between items-center border-b border-slate-50">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-500 shadow-inner">
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-800 tracking-tight">
+                        Panel Alumno
+                      </h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        {activeLead.nombre}
+                      </p>
+                    </div>
+                  </div>
                   <button
                     onClick={() => setManageModalLeadId(null)}
-                    className="absolute right-4 top-4 opacity-70 hover:opacity-100"
+                    className="p-2 bg-slate-50 text-slate-400 rounded-full hover:bg-rose-50 hover:text-rose-500 transition-colors"
                   >
                     <svg
-                      className="w-5 h-5"
+                      className="w-4 h-4"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -404,23 +424,37 @@ export default function CrmDashboard() {
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        strokeWidth={2}
+                        strokeWidth={2.5}
                         d="M6 18L18 6M6 6l12 12"
                       />
                     </svg>
                   </button>
                 </div>
 
-                <div className="p-6 space-y-6">
-                  {/* FECHAS */}
-                  <div className="space-y-3">
-                    <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b pb-1">
+                {/* Cuerpo con Fondo Gris "Cards inside Cards" */}
+                <div className="p-6 space-y-4 bg-slate-50/50">
+                  {/* Tarjeta Interna: FECHAS */}
+                  <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100/60">
+                    <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                      <svg
+                        className="w-3 h-3 text-slate-300"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
                       Fechas del Curso
                     </h4>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-[8px] font-bold text-slate-500 uppercase">
-                          Inicio de Clase
+                        <label className="text-[8px] font-bold text-slate-400 uppercase">
+                          Inicio
                         </label>
                         <input
                           type="date"
@@ -432,11 +466,11 @@ export default function CrmDashboard() {
                               e.target.value,
                             )
                           }
-                          className="w-full mt-1 px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-indigo-600 outline-none hover:bg-slate-100 focus:bg-white"
+                          className="w-full mt-1 px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-indigo-600 outline-none hover:bg-slate-100 focus:bg-white transition-colors"
                         />
                       </div>
                       <div>
-                        <label className="text-[8px] font-bold text-slate-500 uppercase">
+                        <label className="text-[8px] font-bold text-slate-400 uppercase">
                           Finalización
                         </label>
                         <input
@@ -449,15 +483,28 @@ export default function CrmDashboard() {
                               e.target.value,
                             )
                           }
-                          className="w-full mt-1 px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-emerald-600 outline-none hover:bg-slate-100 focus:bg-white"
+                          className="w-full mt-1 px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-emerald-600 outline-none hover:bg-slate-100 focus:bg-white transition-colors"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* DOCUMENTOS */}
-                  <div className="space-y-3">
-                    <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b pb-1">
+                  {/* Tarjeta Interna: DOCUMENTOS */}
+                  <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100/60">
+                    <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                      <svg
+                        className="w-3 h-3 text-slate-300"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
                       Documentación
                     </h4>
                     <div className="flex gap-2">
@@ -469,10 +516,10 @@ export default function CrmDashboard() {
                             !activeLead.doc1,
                           )
                         }
-                        className={`flex-1 py-2 rounded-xl border text-[10px] font-black transition-all flex justify-center items-center gap-1.5 ${activeLead.doc1 ? "bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
+                        className={`flex-1 py-2 rounded-xl border text-[10px] font-black transition-all flex justify-center items-center gap-1.5 active:scale-95 ${activeLead.doc1 ? "bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
                       >
                         <div
-                          className={`w-3 h-3 rounded-[3px] flex items-center justify-center border ${activeLead.doc1 ? "bg-emerald-500 border-emerald-500" : "bg-white border-slate-300"}`}
+                          className={`w-3 h-3 rounded-[3px] flex items-center justify-center border transition-colors ${activeLead.doc1 ? "bg-emerald-500 border-emerald-500" : "bg-white border-slate-300"}`}
                         >
                           {activeLead.doc1 && (
                             <svg
@@ -500,10 +547,10 @@ export default function CrmDashboard() {
                             !activeLead.doc2,
                           )
                         }
-                        className={`flex-1 py-2 rounded-xl border text-[10px] font-black transition-all flex justify-center items-center gap-1.5 ${activeLead.doc2 ? "bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
+                        className={`flex-1 py-2 rounded-xl border text-[10px] font-black transition-all flex justify-center items-center gap-1.5 active:scale-95 ${activeLead.doc2 ? "bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
                       >
                         <div
-                          className={`w-3 h-3 rounded-[3px] flex items-center justify-center border ${activeLead.doc2 ? "bg-emerald-500 border-emerald-500" : "bg-white border-slate-300"}`}
+                          className={`w-3 h-3 rounded-[3px] flex items-center justify-center border transition-colors ${activeLead.doc2 ? "bg-emerald-500 border-emerald-500" : "bg-white border-slate-300"}`}
                         >
                           {activeLead.doc2 && (
                             <svg
@@ -526,9 +573,22 @@ export default function CrmDashboard() {
                     </div>
                   </div>
 
-                  {/* ACCESOS Y REGALO */}
-                  <div className="space-y-3">
-                    <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b pb-1">
+                  {/* Tarjeta Interna: ENTREGABLES */}
+                  <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100/60">
+                    <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                      <svg
+                        className="w-3 h-3 text-slate-300"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                        />
+                      </svg>
                       Entregables
                     </h4>
                     <div className="grid grid-cols-2 gap-3">
@@ -555,19 +615,20 @@ export default function CrmDashboard() {
                         }
                         className={`w-full px-2 py-2 border rounded-xl text-[10px] font-black uppercase outline-none text-center shadow-sm cursor-pointer transition-colors ${activeLead.regalo === "si" ? "bg-purple-500 text-white border-purple-600" : "bg-white text-slate-400 border-slate-200 hover:bg-slate-50"}`}
                       >
-                        <option value="no">🎁 Regalo Pendiente</option>
-                        <option value="si">🎁 Regalo Entregado</option>
+                        <option value="no">🎁 Pendiente</option>
+                        <option value="si">🎁 Entregado</option>
                       </select>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 bg-slate-50 flex justify-center border-t border-slate-100">
+                {/* Botón Guardar Inferior */}
+                <div className="p-5 bg-white border-t border-slate-100">
                   <button
                     onClick={() => setManageModalLeadId(null)}
-                    className="w-full bg-slate-800 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-700 transition-colors active:scale-95 shadow-md"
+                    className="w-full bg-[#4F46E5] text-white py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:shadow-lg hover:shadow-indigo-200 hover:-translate-y-0.5 active:translate-y-0 transition-all"
                   >
-                    Listo
+                    Guardar y Cerrar
                   </button>
                 </div>
               </div>
@@ -575,7 +636,7 @@ export default function CrmDashboard() {
           );
         })()}
 
-      {/* MODAL FINALIZAR (Se mantiene igual) */}
+      {/* MODAL FINALIZAR */}
       {finalizeModal.open && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl p-6 border border-slate-100">

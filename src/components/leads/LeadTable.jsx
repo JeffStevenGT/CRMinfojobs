@@ -33,7 +33,7 @@ const ElegantDatePicker = ({
   return (
     <div
       onClick={handleContainerClick}
-      className={`relative flex items-center justify-center px-2 py-1 rounded-lg border text-[9px] font-black uppercase transition-all cursor-pointer select-none ${colorClass === "sky" ? "bg-sky-50 text-sky-600 border-sky-100 hover:border-sky-300" : "bg-indigo-50 text-indigo-600 border-indigo-100 hover:border-indigo-300"}`}
+      className={`relative flex items-center justify-center px-2 py-1.5 rounded-lg border text-[9px] font-black uppercase transition-all cursor-pointer select-none ${colorClass === "sky" ? "bg-sky-50 text-sky-600 border-sky-100 hover:border-sky-300" : "bg-indigo-50 text-indigo-600 border-indigo-100 hover:border-indigo-300"}`}
     >
       {displayDate()}
       <input
@@ -123,7 +123,6 @@ export default function LeadTable({
               <th className="px-4 py-4 text-left">Contacto</th>
               <th className="px-2 py-4">Estado</th>
               <th className="px-2 py-4">Estatus</th>
-              {/* COLUMNA INTELIGENTE UNIFICADA */}
               <th className="px-2 py-4 text-indigo-500">Flujo Operativo</th>
               <th className="px-2 py-4">Obs.</th>
               <th className="px-4 py-4">Acciones</th>
@@ -455,106 +454,131 @@ export default function LeadTable({
                     )}
                   </td>
 
-                  {/* COLUMNA INTELIGENTE: FLUJO OPERATIVO */}
-                  <td className="px-2 py-3 text-center align-top">
-                    {lead.estado === "Agendado" && (
-                      <div className="flex flex-col items-center gap-1.5">
-                        <span className="text-[6.5px] font-black text-slate-400 uppercase tracking-widest">
-                          Cita Llamada:
-                        </span>
-                        <ElegantDatePicker
-                          type="datetime-local"
-                          value={lead.fechaLlamada}
-                          onChange={(v) =>
-                            onUpdateLead(lead.id, "fechaLlamada", v)
-                          }
-                        />
-                      </div>
-                    )}
+                  {/* NUEVA COLUMNA INTELIGENTE: FLUJO OPERATIVO */}
+                  <td className="px-2 py-3 align-top">
+                    <div className="bg-slate-50/70 rounded-xl p-2.5 border border-slate-100 flex flex-col items-center justify-center gap-2 h-full min-h-[70px]">
+                      {lead.estado === "Agendado" && (
+                        <div className="flex flex-col items-center gap-1.5 w-full">
+                          <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                            <svg
+                              className="w-2.5 h-2.5 text-indigo-400"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                            Agendar Llamada
+                          </span>
+                          <ElegantDatePicker
+                            type="datetime-local"
+                            value={lead.fechaLlamada}
+                            onChange={(v) =>
+                              onUpdateLead(lead.id, "fechaLlamada", v)
+                            }
+                          />
+                        </div>
+                      )}
 
-                    {lead.estado === "Interesado" && (
-                      <div className="flex flex-col items-center gap-1.5">
-                        <span className="text-[6.5px] font-black text-slate-400 uppercase tracking-widest">
-                          Turno Curso:
-                        </span>
-                        <AccordionSelect
-                          compact={true}
-                          value={lead.horario}
-                          isOpen={openDropdownId === lead.id + "hor"}
-                          onToggle={() =>
-                            setOpenDropdownId(
-                              openDropdownId === lead.id + "hor"
-                                ? null
-                                : lead.id + "hor",
-                            )
-                          }
-                          options={[
-                            { value: "mañana", label: "Mañana" },
-                            { value: "tarde", label: "Tarde" },
-                          ]}
-                          onChange={(v) => onUpdateLead(lead.id, "horario", v)}
-                          renderBadge={(v) => (
-                            <span className="text-[8px] font-bold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-lg uppercase shadow-sm">
-                              {v || "S/T"}
-                            </span>
-                          )}
-                        />
-                      </div>
-                    )}
+                      {lead.estado === "Interesado" && (
+                        <div className="flex flex-col items-center gap-1.5 w-full">
+                          <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                            <svg
+                              className="w-2.5 h-2.5 text-indigo-400"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            Turno Preferido
+                          </span>
+                          <AccordionSelect
+                            compact={true}
+                            value={lead.horario}
+                            isOpen={openDropdownId === lead.id + "hor"}
+                            onToggle={() =>
+                              setOpenDropdownId(
+                                openDropdownId === lead.id + "hor"
+                                  ? null
+                                  : lead.id + "hor",
+                              )
+                            }
+                            options={[
+                              { value: "mañana", label: "Mañana" },
+                              { value: "tarde", label: "Tarde" },
+                            ]}
+                            onChange={(v) =>
+                              onUpdateLead(lead.id, "horario", v)
+                            }
+                            renderBadge={(v) => (
+                              <span className="text-[9px] font-bold text-slate-600 bg-white border border-slate-200 px-3 py-1 rounded-lg uppercase shadow-sm cursor-pointer hover:border-indigo-300 transition-colors">
+                                {v || "Seleccionar"}
+                              </span>
+                            )}
+                          />
+                        </div>
+                      )}
 
-                    {lead.estado === "Inscrito" && (
-                      <div className="flex flex-col items-center gap-1.5">
-                        <button
-                          onClick={() => onManageLead(lead)}
-                          className="w-full max-w-[100px] bg-indigo-50 text-indigo-600 px-2 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border border-indigo-100 hover:bg-indigo-100 hover:border-indigo-200 transition-colors flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
-                        >
-                          <svg
-                            className="w-3 h-3"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                      {lead.estado === "Inscrito" && (
+                        <div className="flex flex-col gap-2 w-full max-w-[120px]">
+                          {/* Botón Panel */}
+                          <button
+                            onClick={() => onManageLead(lead)}
+                            className="group w-full bg-white text-slate-600 px-2 py-1.5 rounded-lg text-[9px] font-bold tracking-wide border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-95"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                          </svg>
-                          Panel Alumno
-                        </button>
+                            <svg
+                              className="w-3.5 h-3.5 text-indigo-400 group-hover:rotate-90 transition-transform duration-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                            </svg>
+                            Panel Alumno
+                          </button>
 
-                        {/* BOTÓN RÁPIDO DE ASISTENCIA */}
-                        <button
-                          onClick={() => onFollowUp(lead)}
-                          className={`w-full max-w-[100px] py-1.5 rounded-lg border text-[8px] font-black flex items-center justify-center gap-1 transition-all active:scale-95 shadow-sm ${nFaltas >= 3 ? "bg-rose-500 border-rose-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
-                        >
-                          <span className="text-[10px]">{nFaltas}F</span>
-                          <svg
-                            className={`w-3 h-3 ${nFaltas >= 3 ? "opacity-100" : "opacity-50"}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                          {/* Botón Asistencia (Con LED) */}
+                          <button
+                            onClick={() => onFollowUp(lead)}
+                            className={`w-full py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm hover:shadow ${nFaltas >= 3 ? "bg-rose-50 text-rose-600 border-rose-200 ring-1 ring-rose-100" : nFaltas > 0 ? "bg-amber-50 text-amber-600 border-amber-200" : "bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100"}`}
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2.5}
-                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    )}
-                    {lead.estado === "No Interesado" && (
-                      <span className="text-slate-300 text-[10px]">---</span>
-                    )}
+                            {/* MINI LED */}
+                            <div
+                              className={`w-1.5 h-1.5 rounded-full ${nFaltas >= 3 ? "bg-rose-500 animate-pulse" : nFaltas > 0 ? "bg-amber-500" : "bg-emerald-500"}`}
+                            ></div>
+                            {nFaltas} Faltas
+                          </button>
+                        </div>
+                      )}
+
+                      {lead.estado === "No Interesado" && (
+                        <span className="text-slate-300 text-[9px] font-medium italic">
+                          Sin acciones
+                        </span>
+                      )}
+                    </div>
                   </td>
 
                   {/* OBSERVACIONES */}
