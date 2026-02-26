@@ -7,7 +7,6 @@ export default function KanbanView({
   onFollowUp,
   onFinalize,
 }) {
-  // 1. COLUMNAS CON LA NUEVA ETAPA "REGISTRADO"
   const columns = [
     {
       id: "agendado",
@@ -56,7 +55,6 @@ export default function KanbanView({
     },
   ];
 
-  // 2. LÓGICA DE DRAG AND DROP
   const handleDragStart = (e, leadId) => {
     e.dataTransfer.setData("leadId", leadId);
   };
@@ -92,7 +90,6 @@ export default function KanbanView({
     e.preventDefault();
   };
 
-  // 3. COMPONENTE DE TARJETA
   const LeadCard = ({ lead }) => {
     const faltas = 20 - (lead.asistencia || []).filter((d) => d).length;
     const isAlerta = faltas >= 2 && lead.status === "en curso";
@@ -156,11 +153,14 @@ export default function KanbanView({
         </div>
 
         {/* CONTROLES OPERATIVOS */}
-        {(lead.estado === "Inscrito" || lead.estado === "Registrado") &&
+        {(lead.estado === "Inscrito" ||
+          lead.estado === "Registrado" ||
+          lead.estado === "Interesado") &&
           !isPerdido && (
             <div className="flex gap-1 mb-1 relative z-20">
-              {/* ESTADO: REGISTRADO -> PIDE DOCUMENTOS */}
-              {lead.estado === "Registrado" && (
+              {/* NUEVO: ESTADO INTERESADO O REGISTRADO -> PIDE DOCUMENTOS */}
+              {(lead.estado === "Registrado" ||
+                lead.estado === "Interesado") && (
                 <div className="flex-1 flex gap-1">
                   <button
                     onClick={() => onUpdateLead(lead.id, "doc1", !lead.doc1)}
@@ -177,7 +177,7 @@ export default function KanbanView({
                 </div>
               )}
 
-              {/* ESTADOS INSCRITOS -> MUESTRAN ACCESOS, FALTAS O REGALO */}
+              {/* ESTADOS INSCRITOS */}
               {lead.estado === "Inscrito" && (
                 <>
                   {(lead.status === "pendiente" ||

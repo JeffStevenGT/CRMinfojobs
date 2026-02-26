@@ -171,7 +171,7 @@ export default function LeadTable({
                   key={lead.id}
                   className={`group border-l-4 rounded-xl ${rowColorClass} ${borderColor} relative ${isRowActive ? "z-50" : "z-0"}`}
                 >
-                  {/* CÁPSULA 1: CLIENTE */}
+                  {/* CLIENTE */}
                   <td className="p-0.5 align-top min-w-[200px]">
                     <div
                       className={`${capsuleStyle} justify-start items-start ${isRowActive ? "z-50" : "z-0"}`}
@@ -252,7 +252,7 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* CÁPSULA 2: CONTACTO */}
+                  {/* CONTACTO */}
                   <td className="p-0.5 align-top min-w-[140px]">
                     <div
                       className={`${capsuleStyle} justify-center items-start gap-1.5 ${isRowActive ? "z-50" : "z-0"}`}
@@ -338,7 +338,7 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* CÁPSULA 3: ESTADO */}
+                  {/* ESTADO Y TEMPERATURA */}
                   <td className="p-0.5 align-top w-[120px]">
                     <div
                       className={`${capsuleStyle} justify-center items-center ${isRowActive ? "z-50" : "z-0"}`}
@@ -358,7 +358,7 @@ export default function LeadTable({
                             options={[
                               { value: "Agendado", label: "Agendado" },
                               { value: "Interesado", label: "Interesado" },
-                              { value: "Registrado", label: "Registrado" }, // NUEVA OPCIÓN
+                              { value: "Registrado", label: "Registrado" },
                               { value: "Inscrito", label: "Matriculado" },
                               {
                                 value: "No Interesado",
@@ -448,7 +448,7 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* CÁPSULA 4: ESTATUS */}
+                  {/* ESTATUS */}
                   <td className="p-0.5 align-top w-[110px]">
                     <div
                       className={`${capsuleStyle} justify-center items-center ${isRowActive ? "z-50" : "z-0"}`}
@@ -510,7 +510,7 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* CÁPSULA 5: FLUJO OPERATIVO */}
+                  {/* FLUJO OPERATIVO */}
                   <td className="p-0.5 align-top w-[130px]">
                     <div
                       className={`${capsuleStyle} justify-center items-center gap-1.5 ${isRowActive ? "z-50" : "z-0"}`}
@@ -543,24 +543,9 @@ export default function LeadTable({
                         </div>
                       )}
 
+                      {/* NUEVO: INTERESADO AHORA MUESTRA TURNO Y DOCUMENTOS */}
                       {lead.estado === "Interesado" && (
                         <div className="flex flex-col items-center gap-1 w-full">
-                          <span className="text-[6.5px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-0.5">
-                            <svg
-                              className="w-2 h-2 text-indigo-400"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2.5}
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                            Turno
-                          </span>
                           <AccordionSelect
                             compact={true}
                             value={lead.horario}
@@ -580,15 +565,32 @@ export default function LeadTable({
                               onUpdateLead(lead.id, "horario", v)
                             }
                             renderBadge={(v) => (
-                              <span className="text-[8.5px] font-bold text-indigo-600 bg-white border border-indigo-100 px-3 py-1 w-full text-center rounded-lg uppercase shadow-sm cursor-pointer hover:border-indigo-300 hover:bg-indigo-50 transition-colors">
-                                {v || "Select"}
+                              <span className="text-[8px] font-bold text-indigo-600 bg-white border border-indigo-100 px-2 py-1 w-full text-center rounded-lg uppercase shadow-sm cursor-pointer hover:border-indigo-300 hover:bg-indigo-50 transition-colors">
+                                Turno: {v || "---"}
                               </span>
                             )}
                           />
+                          <div className="flex gap-1 w-full mt-0.5">
+                            <button
+                              onClick={() =>
+                                onUpdateLead(lead.id, "doc1", !lead.doc1)
+                              }
+                              className={`flex-1 py-1 rounded-lg border text-[7.5px] font-black transition-colors ${lead.doc1 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
+                            >
+                              {lead.situacion === "Autonomo" ? "REC" : "NOM"}
+                            </button>
+                            <button
+                              onClick={() =>
+                                onUpdateLead(lead.id, "doc2", !lead.doc2)
+                              }
+                              className={`flex-1 py-1 rounded-lg border text-[7.5px] font-black transition-colors ${lead.doc2 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
+                            >
+                              {lead.situacion === "Autonomo" ? "IAE" : "CON"}
+                            </button>
+                          </div>
                         </div>
                       )}
 
-                      {/* NUEVO: ESTADO REGISTRADO PIDE DOCUMENTOS DIRECTO EN LA TABLA */}
                       {lead.estado === "Registrado" && (
                         <div className="flex flex-col items-center gap-1.5 w-full">
                           <span className="text-[6.5px] font-black text-purple-400 uppercase tracking-widest flex items-center gap-0.5">
@@ -675,7 +677,7 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* CÁPSULA 6: OBS */}
+                  {/* OBS Y ACCIONES */}
                   <td className="p-0.5 align-top w-[60px]">
                     <div
                       className={`${capsuleStyle} justify-center items-center ${isRowActive ? "z-50" : "z-0"}`}
@@ -708,8 +710,6 @@ export default function LeadTable({
                       )}
                     </div>
                   </td>
-
-                  {/* CÁPSULA 7: ACCIONES */}
                   <td className="p-0.5 align-top w-[80px]">
                     <div
                       className={`${capsuleStyle} flex-row justify-center items-center gap-1.5 ${isRowActive ? "z-50" : "z-0"}`}
