@@ -1,6 +1,61 @@
 import React, { useState, useEffect } from "react";
 
 export default function LeadFormModal({ onClose, onSave, leadToEdit }) {
+  const PROVINCIAS = [
+    "Álava",
+    "Albacete",
+    "Alicante",
+    "Almería",
+    "Asturias",
+    "Ávila",
+    "Badajoz",
+    "Barcelona",
+    "Burgos",
+    "Cáceres",
+    "Cádiz",
+    "Cantabria",
+    "Castellón",
+    "Ciudad Real",
+    "Córdoba",
+    "Cuenca",
+    "Gerona",
+    "Granada",
+    "Guadalajara",
+    "Guipúzcoa",
+    "Huelva",
+    "Huesca",
+    "Islas Baleares",
+    "Jaén",
+    "La Coruña",
+    "La Rioja",
+    "Las Palmas",
+    "León",
+    "Lérida",
+    "Lugo",
+    "Madrid",
+    "Málaga",
+    "Murcia",
+    "Navarra",
+    "Orense",
+    "Palencia",
+    "Pontevedra",
+    "Salamanca",
+    "Segovia",
+    "Sevilla",
+    "Soria",
+    "Tarragona",
+    "Santa Cruz de Tenerife",
+    "Teruel",
+    "Toledo",
+    "Valencia",
+    "Valladolid",
+    "Vizcaya",
+    "Zamora",
+    "Zaragoza",
+    "Ceuta",
+    "Melilla",
+  ];
+
   const [formData, setFormData] = useState({
     nombre: "",
     whatsapp: "",
@@ -31,10 +86,10 @@ export default function LeadFormModal({ onClose, onSave, leadToEdit }) {
 
   return (
     <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-[#F8FAFC] w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-white animate-in zoom-in-95 duration-300">
+      <div className="bg-[#F8FAFC] w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden border border-white animate-in zoom-in-95 duration-300">
         <div className="bg-slate-800 p-6 text-center text-white relative">
           <h3 className="text-sm font-black uppercase tracking-[0.2em]">
-            {leadToEdit ? "Editar Perfil" : "Nuevo Registro"}
+            {leadToEdit ? "Modificar Perfil" : "Nuevo Ingreso"}
           </h3>
           <button
             onClick={onClose}
@@ -58,47 +113,30 @@ export default function LeadFormModal({ onClose, onSave, leadToEdit }) {
 
         <form
           onSubmit={handleSubmit}
-          className="p-8 space-y-5 max-h-[80vh] overflow-y-auto custom-scrollbar"
+          className="p-8 space-y-4 max-h-[85vh] overflow-y-auto custom-scrollbar"
         >
-          {/* SELECTOR DE CAMPAÑA POR CLIC (BOTONES) */}
+          {/* SELECTOR DE PROYECTO (1 CLIC) */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] text-center block mb-3">
-              Seleccionar Campaña
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center block mb-2">
+              Campaña Actual
             </label>
             <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, proyecto: "CLM" })}
-                className={`py-3 rounded-2xl text-[10px] font-black transition-all border-2 ${formData.proyecto === "CLM" ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100 scale-105" : "bg-white border-slate-100 text-slate-400 hover:border-indigo-200"}`}
-              >
-                CLM TURISMO
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData({ ...formData, proyecto: "Lideres" })
-                }
-                className={`py-3 rounded-2xl text-[10px] font-black transition-all border-2 ${formData.proyecto === "Lideres" ? "bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-100 scale-105" : "bg-white border-slate-100 text-slate-400 hover:border-amber-200"}`}
-              >
-                LÍDERES
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData({ ...formData, proyecto: "Sandetel" })
-                }
-                className={`py-3 rounded-2xl text-[10px] font-black transition-all border-2 ${formData.proyecto === "Sandetel" ? "bg-cyan-500 border-cyan-500 text-white shadow-lg shadow-cyan-100 scale-105" : "bg-white border-slate-100 text-slate-400 hover:border-cyan-200"}`}
-              >
-                SANDETEL
-              </button>
+              {["CLM", "Lideres", "Sandetel"].map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, proyecto: p })}
+                  className={`py-2.5 rounded-xl text-[10px] font-black border-2 transition-all ${formData.proyecto === p ? "bg-indigo-600 border-indigo-600 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400"}`}
+                >
+                  {p === "CLM" ? "CLM TURISMO" : p.toUpperCase()}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="h-px bg-slate-200 w-full my-2"></div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelClass}>Nombre del Cliente</label>
+              <label className={labelClass}>Nombre y Apellidos</label>
               <input
                 required
                 type="text"
@@ -107,26 +145,34 @@ export default function LeadFormModal({ onClose, onSave, leadToEdit }) {
                   setFormData({ ...formData, nombre: e.target.value })
                 }
                 className={inputClass}
-                placeholder="Nombre y Apellidos"
+                placeholder="Nombre completo"
               />
             </div>
             <div>
-              <label className={labelClass}>WhatsApp</label>
-              <input
-                required
-                type="text"
-                value={formData.whatsapp}
-                onChange={(e) =>
-                  setFormData({ ...formData, whatsapp: e.target.value })
-                }
-                className={inputClass}
-                placeholder="987654321"
-              />
+              <label className={labelClass}>WhatsApp (España +34)</label>
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-[11px] font-bold text-slate-400">
+                  +34
+                </span>
+                <input
+                  required
+                  type="text"
+                  value={formData.whatsapp}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      whatsapp: e.target.value.replace(/\D/g, ""),
+                    })
+                  }
+                  className={`${inputClass} pl-10`}
+                  placeholder="600 000 000"
+                />
+              </div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
+            <div className="col-span-1">
               <label className={labelClass}>Email</label>
               <input
                 type="email"
@@ -135,48 +181,87 @@ export default function LeadFormModal({ onClose, onSave, leadToEdit }) {
                   setFormData({ ...formData, email: e.target.value })
                 }
                 className={inputClass}
-                placeholder="ejemplo@mail.com"
+                placeholder="correo@ejemplo.com"
               />
             </div>
-            <div>
-              <label className={labelClass}>Provincia</label>
-              <input
-                type="text"
+            <div className="col-span-1">
+              <label className={labelClass}>Provincia de Residencia</label>
+              <select
+                required
                 value={formData.provincia}
                 onChange={(e) =>
                   setFormData({ ...formData, provincia: e.target.value })
                 }
                 className={inputClass}
-                placeholder="Ciudad"
-              />
+              >
+                <option value="">-- SELECCIONAR --</option>
+                {PROVINCIAS.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelClass}>Situación</label>
+              <label className={labelClass}>Referido</label>
+              <div className="flex gap-1">
+                {["no", "si"].map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, esReferido: r })}
+                    className={`flex-1 py-2 rounded-xl text-[9px] font-black border transition-all ${formData.esReferido === r ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-400 border-slate-100"}`}
+                  >
+                    {r === "si" ? "ES REFERIDO" : "DIRECTO"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {formData.esReferido === "si" && (
+              <div>
+                <label className={labelClass}>¿Quién Recomendó?</label>
+                <input
+                  required
+                  type="text"
+                  value={formData.quienRefirio}
+                  onChange={(e) =>
+                    setFormData({ ...formData, quienRefirio: e.target.value })
+                  }
+                  className={inputClass}
+                  placeholder="Nombre del contacto"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Situación Laboral</label>
               <div className="flex gap-1">
                 {["Trabajador", "Autonomo"].map((s) => (
                   <button
                     key={s}
                     type="button"
                     onClick={() => setFormData({ ...formData, situacion: s })}
-                    className={`flex-1 py-2 rounded-xl text-[9px] font-black border transition-all ${formData.situacion === s ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-400 border-slate-200"}`}
+                    className={`flex-1 py-2 rounded-xl text-[9px] font-black border transition-all ${formData.situacion === s ? "bg-indigo-50 text-indigo-700 border-indigo-200" : "bg-white text-slate-400 border-slate-100"}`}
                   >
-                    {s === "Autonomo" ? "AUTÓN." : "TRAB."}
+                    {s.toUpperCase()}
                   </button>
                 ))}
               </div>
             </div>
             <div>
-              <label className={labelClass}>Temperatura</label>
+              <label className={labelClass}>Interés</label>
               <div className="flex gap-1">
                 {["Frío", "Tibio", "Caliente"].map((t) => (
                   <button
                     key={t}
                     type="button"
                     onClick={() => setFormData({ ...formData, temperatura: t })}
-                    className={`flex-1 py-2 rounded-xl text-[12px] border transition-all ${formData.temperatura === t ? "bg-white border-indigo-500 shadow-sm" : "bg-white border-slate-100 opacity-40 hover:opacity-100"}`}
+                    className={`flex-1 py-2 rounded-xl text-[12px] border transition-all ${formData.temperatura === t ? "bg-white border-indigo-500 shadow-sm" : "bg-white border-slate-100 opacity-40"}`}
                   >
                     {t === "Frío" ? "❄️" : t === "Tibio" ? "☀️" : "🔥"}
                   </button>
@@ -186,7 +271,7 @@ export default function LeadFormModal({ onClose, onSave, leadToEdit }) {
           </div>
 
           <div className="space-y-1">
-            <label className={labelClass}>Observaciones</label>
+            <label className={labelClass}>Notas y Comentarios</label>
             <textarea
               rows="2"
               value={formData.comentarios}
@@ -194,11 +279,11 @@ export default function LeadFormModal({ onClose, onSave, leadToEdit }) {
                 setFormData({ ...formData, comentarios: e.target.value })
               }
               className={`${inputClass} normal-case h-16 resize-none py-2`}
-              placeholder="Notas adicionales..."
+              placeholder="Escribe observaciones aquí..."
             ></textarea>
           </div>
 
-          <div className="flex gap-4 pt-2">
+          <div className="flex gap-4 pt-4 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
@@ -208,9 +293,9 @@ export default function LeadFormModal({ onClose, onSave, leadToEdit }) {
             </button>
             <button
               type="submit"
-              className="flex-[2] bg-indigo-600 text-white py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all"
+              className="flex-[2] bg-[#4F46E5] text-white py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all"
             >
-              {leadToEdit ? "Guardar Cambios" : "Registrar Lead"}
+              {leadToEdit ? "Guardar Cambios" : "Completar Registro"}
             </button>
           </div>
         </form>

@@ -22,7 +22,7 @@ export default function CrmDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("clientes-clm");
   const [viewMode, setViewMode] = useState("kanban");
-  const [projectFilter, setProjectFilter] = useState("todos"); // FILTRO MAESTRO DE CAMPAÑA
+  const [projectFilter, setProjectFilter] = useState("todos");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFollowUpOpen, setIsFollowUpOpen] = useState(false);
@@ -56,41 +56,43 @@ export default function CrmDashboard() {
     );
   };
 
-  // --- FUNCIÓN DE PRUEBA: INYECTAR LEADS ---
-  const injectTestLeads = async () => {
+  // --- MIGRACIÓN: Pone 'CLM' a los leads que no tienen proyecto ---
+  const migrateLeads = async () => {
+    const sinProy = leadsCLM.filter((l) => !l.proyecto);
+    if (sinProy.length === 0) return notify("Sin leads pendientes", "info");
+    if (window.confirm(`¿Etiquetar ${sinProy.length} leads como CLM?`)) {
+      for (const l of sinProy) {
+        await updateDoc(doc(db, "leads", l.id), { proyecto: "CLM" });
+      }
+      notify("Base de datos actualizada");
+    }
+  };
+
+  const handleSaveLead = async (data) => {
     try {
-      const tests = [
-        {
-          nombre: "LEAD PRUEBA LIDERES",
-          proyecto: "Lideres",
-          estado: "Interesado",
-          whatsapp: "111222333",
-          situacion: "Trabajador",
-          fechaCreacion: new Date().toISOString(),
-        },
-        {
-          nombre: "LEAD PRUEBA SANDETEL",
-          proyecto: "Sandetel",
-          estado: "Registrado",
-          whatsapp: "444555666",
-          situacion: "Autonomo",
-          fechaCreacion: new Date().toISOString(),
-        },
-      ];
-      for (const t of tests) {
+      if (data.id) {
+        const { id, ...cleanData } = data;
+        await updateDoc(doc(db, "leads", id), cleanData);
+        notify("Perfil actualizado");
+      } else {
         await addDoc(collection(db, "leads"), {
-          ...t,
+          ...data,
           asistencia: Array(20).fill(true),
+          faltas: "0",
           status: "pendiente",
           doc1: false,
           doc2: false,
           tieneUsuarios: false,
+          regalo: "no",
           respondioWpp: false,
+          fechaCreacion: new Date().toISOString(),
         });
+        notify(`Registrado en ${data.proyecto}`);
       }
-      notify("Campaña Líderes y Sandetel inyectadas");
+      setIsModalOpen(false);
+      setLeadToEdit(null);
     } catch (e) {
-      notify("Error", "error");
+      notify("Error de guardado", "error");
     }
   };
 
@@ -102,26 +104,10 @@ export default function CrmDashboard() {
           campo,
         )
       )
-        notify("Dato Guardado");
+        notify("Guardado");
     } catch (e) {
-      notify("Error de red", "error");
+      notify("Error", "error");
     }
-  };
-
-  const handleFinalizeSave = async (e) => {
-    e.preventDefault();
-    await updateDoc(doc(db, "leads", finalizeModal.lead.id), {
-      status: "finalizado",
-      inicioClase: finalizeModal.fechaInicio,
-      fechaFinClase: finalizeModal.fechaFin,
-    });
-    setFinalizeModal({
-      open: false,
-      lead: null,
-      fechaInicio: "",
-      fechaFin: "",
-    });
-    notify("Venta Finalizada");
   };
 
   const filteredLeads = leadsCLM
@@ -129,8 +115,8 @@ export default function CrmDashboard() {
       const b = searchTerm.toLowerCase();
       const matchText =
         l.nombre?.toLowerCase().includes(b) || l.whatsapp?.includes(searchTerm);
-      const matchProject =
-        projectFilter === "todos" || l.proyecto === projectFilter;
+      const proj = l.proyecto || "CLM"; // Fallback para visualización antes de migrar
+      const matchProject = projectFilter === "todos" || proj === projectFilter;
       return matchText && matchProject;
     })
     .sort(
@@ -140,7 +126,9 @@ export default function CrmDashboard() {
   return (
     <div className="flex h-screen bg-[#FDFDFD] font-sans overflow-hidden relative">
       {toast.show && (
-        <div className="fixed bottom-10 right-10 z-[600] bg-slate-800 text-white px-6 py-3 rounded-full shadow-2xl animate-in fade-in slide-in-from-bottom-4">
+        <div
+          className={`fixed bottom-10 right-10 z-[700] px-6 py-3 rounded-full shadow-2xl animate-in fade-in slide-in-from-bottom-4 ${toast.type === "success" ? "bg-slate-800 text-white" : "bg-rose-500 text-white"}`}
+        >
           <span className="text-[10px] font-black uppercase tracking-widest">
             {toast.message}
           </span>
@@ -159,32 +147,32 @@ export default function CrmDashboard() {
         <div className="flex-1 overflow-auto p-8 custom-scrollbar">
           {activeTab === "clientes-clm" && (
             <div className="max-w-[1600px] mx-auto space-y-4 flex flex-col h-full">
-              {/* CABECERA DASHBOARD */}
               <div className="flex justify-between items-end px-2">
                 <div>
                   <h1 className="text-xl font-black text-slate-800 uppercase tracking-widest italic">
-                    Panel Multicampaña
+                    Panel de Gestión
                   </h1>
                   <button
-                    onClick={injectTestLeads}
-                    className="text-[8px] font-black text-indigo-500 hover:underline uppercase mt-1"
+                    onClick={migrateLeads}
+                    className="text-[8px] font-black text-indigo-400 hover:text-indigo-600 uppercase mt-1"
                   >
-                    Simular Lideres/Sandetel
+                    ⚙️ Sincronizar campañas antiguas
                   </button>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {/* FILTRO DE PROYECTO */}
-                  <select
-                    value={projectFilter}
-                    onChange={(e) => setProjectFilter(e.target.value)}
-                    className="bg-white border border-slate-200 text-[9px] font-black uppercase px-4 py-2.5 rounded-xl shadow-sm outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
-                  >
-                    <option value="todos">Todos los Proyectos</option>
-                    <option value="CLM">CLM Turismo</option>
-                    <option value="Lideres">Campaña Líderes</option>
-                    <option value="Sandetel">Campaña Sandetel</option>
-                  </select>
+                  {/* FILTRO PROYECTO */}
+                  <div className="bg-white p-1 rounded-2xl border border-slate-200 flex items-center shadow-sm">
+                    {["todos", "CLM", "Lideres", "Sandetel"].map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setProjectFilter(p)}
+                        className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${projectFilter === p ? "bg-slate-800 text-white shadow-md" : "text-slate-400 hover:text-slate-600"}`}
+                      >
+                        {p === "todos" ? "🌎 Todos" : p}
+                      </button>
+                    ))}
+                  </div>
 
                   <div className="bg-slate-200/50 p-1 rounded-xl flex items-center border border-slate-200">
                     <button
@@ -200,16 +188,19 @@ export default function CrmDashboard() {
                       Tablero
                     </button>
                   </div>
+
                   <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="bg-[#4F46E5] text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl"
+                    onClick={() => {
+                      setLeadToEdit(null);
+                      setIsModalOpen(true);
+                    }}
+                    className="bg-[#4F46E5] text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all"
                   >
                     + Nuevo Lead
                   </button>
                 </div>
               </div>
 
-              {/* RENDER VISTA */}
               <div className="flex-1 min-h-0">
                 {viewMode === "table" ? (
                   <LeadTable
@@ -264,14 +255,54 @@ export default function CrmDashboard() {
         </div>
       </main>
 
-      {/* MODAL FINALES */}
+      {isModalOpen && (
+        <LeadFormModal
+          onClose={() => {
+            setIsModalOpen(false);
+            setLeadToEdit(null);
+          }}
+          onSave={handleSaveLead}
+          leadToEdit={leadToEdit}
+        />
+      )}
+      {isFollowUpOpen && (
+        <FollowUpModal
+          onClose={() => setIsFollowUpOpen(false)}
+          onSave={async (u) => {
+            const f = 20 - (u.asistencia || []).filter((d) => d).length;
+            let s = u.status || "en curso";
+            if (f >= 3) s = "no apto";
+            await updateDoc(doc(db, "leads", u.id), {
+              ...u,
+              faltas: f.toString(),
+              status: s,
+            });
+            setIsFollowUpOpen(false);
+          }}
+          lead={leadToFollow}
+        />
+      )}
+
+      {/* MODAL CIERRE COMISION */}
       {finalizeModal.open && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl">
             <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest text-center mb-6">
-              Finalizar para Comisión
+              Finalizar para Pago
             </h3>
-            <form onSubmit={handleFinalizeSave} className="space-y-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSaveLead({
+                  ...finalizeModal.lead,
+                  status: "finalizado",
+                  inicioClase: finalizeModal.fechaInicio,
+                  fechaFinClase: finalizeModal.fechaFin,
+                });
+                setFinalizeModal({ open: false });
+              }}
+              className="space-y-4"
+            >
               <input
                 required
                 type="date"
@@ -300,34 +331,11 @@ export default function CrmDashboard() {
                 type="submit"
                 className="w-full bg-emerald-500 text-white py-3 rounded-xl text-[10px] font-black uppercase"
               >
-                Cerrar Venta
+                Comisionar
               </button>
             </form>
           </div>
         </div>
-      )}
-
-      {isModalOpen && (
-        <LeadFormModal
-          leads={leadsCLM}
-          onClose={() => {
-            setIsModalOpen(false);
-            setLeadToEdit(null);
-          }}
-          onSave={async (d) => {
-            /* lógica de guardado */
-          }}
-          leadToEdit={leadToEdit}
-        />
-      )}
-      {isFollowUpOpen && (
-        <FollowUpModal
-          onClose={() => setIsFollowUpOpen(false)}
-          onSave={async (u) => {
-            /* lógica de asistencia */
-          }}
-          lead={leadToFollow}
-        />
       )}
     </div>
   );
