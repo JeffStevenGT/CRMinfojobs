@@ -1,22 +1,129 @@
 import React, { useState, useEffect, useRef } from "react";
 
-export default function LeadFormModal({ leads, onClose, onSave, leadToEdit }) {
-  const PROVINCIAS = [
-    "Álava",
+// --- NUEVO: SUBCOMPONENTE DE AUTOCOMPLETADO ELEGANTE ---
+const AutocompleteInput = ({
+  name,
+  value,
+  onChange,
+  options,
+  placeholder,
+  className,
+}) => {
+  const [filteredOptions, setFilteredOptions] = useState([]);
+  const [showOptions, setShowOptions] = useState(false);
+  const wrapperRef = useRef(null);
+
+  // Cierra el menú flotante si haces clic fuera de él
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setShowOptions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleInputChange = (e) => {
+    const inputValue = e.target.value;
+    onChange(e); // Actualiza el estado principal del formulario
+
+    if (inputValue.trim() === "") {
+      setShowOptions(false);
+    } else {
+      // Filtra las opciones que coincidan con lo que escribe el usuario
+      const filtered = options.filter((opt) =>
+        opt.toLowerCase().includes(inputValue.toLowerCase()),
+      );
+      setFilteredOptions(filtered);
+      setShowOptions(true);
+    }
+  };
+
+  const handleOptionClick = (opt) => {
+    // Simula un evento para actualizar el estado del padre con la opción elegida
+    onChange({ target: { name, value: opt } });
+    setShowOptions(false);
+  };
+
+  return (
+    <div ref={wrapperRef} className="relative w-full">
+      <input
+        type="text"
+        name={name}
+        value={value}
+        onChange={handleInputChange}
+        onFocus={handleInputChange} // Muestra sugerencias al hacer clic si ya hay texto
+        className={className}
+        placeholder={placeholder}
+        autoComplete="off"
+      />
+      {showOptions && filteredOptions.length > 0 && (
+        <ul className="absolute z-[1010] w-full bg-white border border-slate-100 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] rounded-xl mt-1.5 max-h-40 overflow-y-auto custom-scroll-y py-1.5">
+          {filteredOptions.map((opt, i) => (
+            <li
+              key={i}
+              onClick={() => handleOptionClick(opt)}
+              className="px-3 py-2 text-xs font-bold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer transition-colors"
+            >
+              {opt}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
+export default function LeadFormModal({ onClose, onSave, leadToEdit, leads }) {
+  const [formData, setFormData] = useState({
+    nombre: "",
+    whatsapp: "",
+    email: "",
+    proyecto: "CLM",
+    provincia: "",
+    situacion: "Trabajador",
+    esReferido: "no",
+    quienRefirio: "",
+    estado: "Agendado",
+    temperatura: "Tibio",
+    horario: "mañana",
+    comentarios: "",
+  });
+
+  useEffect(() => {
+    if (leadToEdit) {
+      setFormData({ ...leadToEdit });
+    }
+  }, [leadToEdit]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  // --- DATOS PARA AUTOCOMPLETADO ---
+  const provinciasEspana = [
+    "Alava",
     "Albacete",
     "Alicante",
     "Almería",
     "Asturias",
-    "Ávila",
+    "Avila",
     "Badajoz",
     "Barcelona",
     "Burgos",
-    "Cáceres",
-    "Cádiz",
+    "Caceres",
+    "Cadiz",
     "Cantabria",
     "Castellón",
     "Ciudad Real",
-    "Córdoba",
+    "Cordoba",
     "Cuenca",
     "Gerona",
     "Granada",
@@ -33,18 +140,18 @@ export default function LeadFormModal({ leads, onClose, onSave, leadToEdit }) {
     "Lérida",
     "Lugo",
     "Madrid",
-    "Málaga",
+    "Malaga",
     "Murcia",
     "Navarra",
     "Orense",
     "Palencia",
     "Pontevedra",
     "Salamanca",
+    "Santa Cruz de Tenerife",
     "Segovia",
     "Sevilla",
     "Soria",
     "Tarragona",
-    "Santa Cruz de Tenerife",
     "Teruel",
     "Toledo",
     "Valencia",
@@ -56,63 +163,29 @@ export default function LeadFormModal({ leads, onClose, onSave, leadToEdit }) {
     "Melilla",
   ];
 
-  const [formData, setFormData] = useState({
-    nombre: "",
-    whatsapp: "",
-    email: "",
-    provincia: "",
-    situacion: "Null",
-    estado: "Agendado",
-    temperatura: "Tibio",
-    proyecto: "CLM",
-    comentarios: "",
-    esReferido: "no",
-    quienRefirio: "",
-  });
-
-  // Estados para buscadores inteligentes
-  const [showProvList, setShowProvList] = useState(false);
-  const [showReferList, setShowReferList] = useState(false);
-
-  useEffect(() => {
-    if (leadToEdit) setFormData({ ...leadToEdit });
-  }, [leadToEdit]);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
-  // Filtrado de provincias según lo escrito
-  const filteredProvincias = PROVINCIAS.filter((p) =>
-    p.toLowerCase().includes(formData.provincia.toLowerCase()),
-  ).slice(0, 5); // Solo mostrar 5 para no saturar
-
-  // Filtrado de nombres para referidos (basado en leads existentes)
-  const nombresReferidores = [...new Set(leads.map((l) => l.nombre))]
-    .filter(
-      (n) => n && n.toLowerCase().includes(formData.quienRefirio.toLowerCase()),
-    )
-    .slice(0, 5);
+  // Extraer nombres únicos de leads existentes para sugerir Referidos
+  const nombresExistentes = leads
+    ? Array.from(new Set(leads.map((l) => l.nombre).filter(Boolean)))
+    : [];
 
   const inputClass =
-    "w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-indigo-100 transition-all text-slate-700 uppercase shadow-sm";
+    "w-full p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 transition-shadow";
   const labelClass =
-    "text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block";
+    "text-[9px] font-black text-slate-400 uppercase ml-1 mb-1 block tracking-widest";
 
   return (
-    <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-[#F8FAFC] w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden border border-white">
-        <div className="bg-slate-800 p-6 text-center text-white relative">
-          <h3 className="text-sm font-black uppercase tracking-widest">
-            {leadToEdit ? "Editar Lead" : "Nuevo Registro"}
-          </h3>
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl border border-slate-100 relative overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
+          <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">
+            {leadToEdit ? "Editar Cliente" : "Nuevo Cliente"}
+          </h2>
           <button
             onClick={onClose}
-            className="absolute right-6 top-6 text-slate-400 hover:text-white"
+            className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 p-2 rounded-xl border border-slate-100 transition-colors"
           >
             <svg
-              className="w-5 h-5"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -120,250 +193,214 @@ export default function LeadFormModal({ leads, onClose, onSave, leadToEdit }) {
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeWidth={2.5}
+                strokeWidth={3}
                 d="M6 18L18 6M6 6l12 12"
               />
             </svg>
           </button>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="p-8 space-y-5 max-h-[85vh] overflow-y-auto custom-scrollbar"
-        >
-          {/* BOTONES DE PROYECTO */}
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase text-center block mb-2">
-              Campaña
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, proyecto: "CLM" })}
-                className={`py-2.5 rounded-xl text-[10px] font-black border-2 transition-all ${formData.proyecto === "CLM" ? "bg-indigo-600 border-indigo-600 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400"}`}
-              >
-                CLM TURISMO
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData({ ...formData, proyecto: "Lideres" })
-                }
-                className={`py-2.5 rounded-xl text-[10px] font-black border-2 transition-all ${formData.proyecto === "Lideres" ? "bg-amber-500 border-amber-500 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400"}`}
-              >
-                LÍDERES
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData({ ...formData, proyecto: "Sandetel" })
-                }
-                className={`py-2.5 rounded-xl text-[10px] font-black border-2 transition-all ${formData.proyecto === "Sandetel" ? "bg-cyan-500 border-cyan-500 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400"}`}
-              >
-                SANDETEL
-              </button>
-            </div>
-          </div>
+        <div className="p-6 overflow-y-auto custom-scroll-y flex-1">
+          <form id="lead-form" onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <h3 className="text-[10px] font-black text-indigo-500 uppercase tracking-widest border-b border-indigo-50 pb-1.5 mb-3">
+                  Datos Personales
+                </h3>
+                <div>
+                  <label className={labelClass}>Nombre Completo</label>
+                  <input
+                    required
+                    type="text"
+                    name="nombre"
+                    value={formData.nombre}
+                    onChange={handleChange}
+                    className={inputClass}
+                    placeholder="Ej. Juan Pérez"
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>WhatsApp</label>
+                  <input
+                    required
+                    type="text"
+                    name="whatsapp"
+                    value={formData.whatsapp}
+                    onChange={handleChange}
+                    className={inputClass}
+                    placeholder="Ej. 600123456"
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className={inputClass}
+                    placeholder="Ej. juan@correo.com"
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Provincia</label>
+                  {/* AUTOCOMPLETADO INTELIGENTE PROVINCIA */}
+                  <AutocompleteInput
+                    name="provincia"
+                    value={formData.provincia}
+                    onChange={handleChange}
+                    options={provinciasEspana}
+                    placeholder="Escribe para buscar..."
+                    className={inputClass}
+                  />
+                </div>
+              </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className={labelClass}>Nombre y Apellidos</label>
-              <input
-                required
-                type="text"
-                value={formData.nombre}
-                onChange={(e) =>
-                  setFormData({ ...formData, nombre: e.target.value })
-                }
-                className={inputClass}
-                placeholder="Juan Pérez"
-              />
+              <div className="space-y-3">
+                <h3 className="text-[10px] font-black text-indigo-500 uppercase tracking-widest border-b border-indigo-50 pb-1.5 mb-3">
+                  Gestión de Campaña
+                </h3>
+                <div>
+                  <label className={labelClass}>Campaña / Proyecto</label>
+                  <select
+                    name="proyecto"
+                    value={formData.proyecto}
+                    onChange={handleChange}
+                    className={`${inputClass} cursor-pointer`}
+                  >
+                    <option value="CLM">CLM</option>
+                    <option value="Lideres">Líderes</option>
+                    <option value="Sandetel">Sandetel</option>
+                    <option value="MasDigital">MasDigital</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Estado Inicial</label>
+                  <select
+                    name="estado"
+                    value={formData.estado}
+                    onChange={handleChange}
+                    className={`${inputClass} cursor-pointer`}
+                  >
+                    <option value="Agendado">📞 Agendado</option>
+                    <option value="Interesado">📝 Interesado</option>
+                    <option value="Registrado">🪪 Registrado</option>
+                    <option value="Inscrito">⏳ Matriculado (Inscrito)</option>
+                    <option value="No Interesado">🛑 No Interesado</option>
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Temperatura</label>
+                    <select
+                      name="temperatura"
+                      value={formData.temperatura}
+                      onChange={handleChange}
+                      className={`${inputClass} cursor-pointer`}
+                    >
+                      <option value="Frío">❄️ Frío</option>
+                      <option value="Tibio">☀️ Tibio</option>
+                      <option value="Caliente">🔥 Caliente</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Turno</label>
+                    <select
+                      name="horario"
+                      value={formData.horario}
+                      onChange={handleChange}
+                      className={`${inputClass} cursor-pointer`}
+                    >
+                      <option value="mañana">Mañana</option>
+                      <option value="tarde">Tarde</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className={labelClass}>Situación Laboral</label>
+                  <select
+                    name="situacion"
+                    value={formData.situacion}
+                    onChange={handleChange}
+                    className={`${inputClass} cursor-pointer`}
+                  >
+                    <option value="Trabajador">Trabajador</option>
+                    <option value="Autonomo">Autónomo</option>
+                    <option value="Desempleado">Desempleado (Null)</option>
+                  </select>
+                </div>
+              </div>
             </div>
-            <div className="space-y-1">
-              <label className={labelClass}>WhatsApp (+34)</label>
-              <input
-                required
-                type="text"
-                value={formData.whatsapp}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    whatsapp: e.target.value.replace(/\D/g, ""),
-                  })
-                }
-                className={inputClass}
-                placeholder="600000000"
-              />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className={labelClass}>Email</label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                className={inputClass}
-                placeholder="mail@ejemplo.com"
-              />
-            </div>
-            {/* BUSCADOR DE PROVINCIAS INTELIGENTE */}
-            <div className="space-y-1 relative">
-              <label className={labelClass}>Provincia de Residencia</label>
-              <input
-                required
-                type="text"
-                value={formData.provincia}
-                onFocus={() => setShowProvList(true)}
-                onBlur={() => setTimeout(() => setShowProvList(false), 200)}
-                onChange={(e) =>
-                  setFormData({ ...formData, provincia: e.target.value })
-                }
-                className={inputClass}
-                placeholder="Escribe para buscar..."
-              />
-              {showProvList &&
-                formData.provincia.length > 0 &&
-                filteredProvincias.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden">
-                    {filteredProvincias.map((p) => (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => {
-                          setFormData({ ...formData, provincia: p });
-                          setShowProvList(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-[10px] font-bold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-colors uppercase"
-                      >
-                        {p}
-                      </button>
-                    ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-50">
+              <div className="space-y-3">
+                <h3 className="text-[10px] font-black text-emerald-500 uppercase tracking-widest border-b border-emerald-50 pb-1.5 mb-3">
+                  Referidos
+                </h3>
+                <div>
+                  <label className={labelClass}>¿Es Referido?</label>
+                  <select
+                    name="esReferido"
+                    value={formData.esReferido}
+                    onChange={handleChange}
+                    className={`${inputClass} cursor-pointer`}
+                  >
+                    <option value="no">No</option>
+                    <option value="si">Sí</option>
+                  </select>
+                </div>
+                {formData.esReferido === "si" && (
+                  <div className="animate-in fade-in slide-in-from-top-2 relative">
+                    <label className={labelClass}>¿Quién lo refirió?</label>
+                    {/* AUTOCOMPLETADO INTELIGENTE REFERIDOS */}
+                    <AutocompleteInput
+                      name="quienRefirio"
+                      value={formData.quienRefirio}
+                      onChange={handleChange}
+                      options={nombresExistentes}
+                      placeholder="Empieza a escribir el nombre..."
+                      className={inputClass}
+                    />
                   </div>
                 )}
-            </div>
-          </div>
+              </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>¿Es un Referido?</label>
-              <div className="flex gap-1">
-                {["no", "si"].map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, esReferido: r })}
-                    className={`flex-1 py-2 rounded-xl text-[9px] font-black border transition-all ${formData.esReferido === r ? "bg-indigo-50 text-indigo-700 border-indigo-200" : "bg-white text-slate-400 border-slate-100"}`}
-                  >
-                    {r === "si" ? "ES REFERIDO" : "DIRECTO"}
-                  </button>
-                ))}
+              <div className="space-y-3">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-1.5 mb-3">
+                  Observaciones
+                </h3>
+                <div>
+                  <label className={labelClass}>Comentarios</label>
+                  <textarea
+                    name="comentarios"
+                    value={formData.comentarios}
+                    onChange={handleChange}
+                    rows="3"
+                    className={`${inputClass} resize-none`}
+                    placeholder="Añade notas importantes aquí..."
+                  ></textarea>
+                </div>
               </div>
             </div>
-            {/* BUSCADOR DE REFERIDORES INTELIGENTE */}
-            {formData.esReferido === "si" && (
-              <div className="space-y-1 relative">
-                <label className={labelClass}>¿Quién Recomendó?</label>
-                <input
-                  required
-                  type="text"
-                  value={formData.quienRefirio}
-                  onFocus={() => setShowReferList(true)}
-                  onBlur={() => setTimeout(() => setShowReferList(false), 200)}
-                  onChange={(e) =>
-                    setFormData({ ...formData, quienRefirio: e.target.value })
-                  }
-                  className={inputClass}
-                  placeholder="Nombre de ayuda..."
-                />
-                {showReferList &&
-                  formData.quienRefirio.length > 0 &&
-                  nombresReferidores.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden">
-                      {nombresReferidores.map((n) => (
-                        <button
-                          key={n}
-                          type="button"
-                          onClick={() => {
-                            setFormData({ ...formData, quienRefirio: n });
-                            setShowReferList(false);
-                          }}
-                          className="w-full text-left px-4 py-2 text-[10px] font-bold text-indigo-600 hover:bg-indigo-50 transition-colors uppercase"
-                        >
-                          {n}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-              </div>
-            )}
-          </div>
+          </form>
+        </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>Situación Laboral</label>
-              <div className="flex gap-1">
-                {["Trabajador", "Autonomo"].map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, situacion: s })}
-                    className={`flex-1 py-2 rounded-xl text-[9px] font-black border transition-all ${formData.situacion === s ? "bg-indigo-50 text-indigo-700 border-indigo-200" : "bg-white text-slate-400 border-slate-100"}`}
-                  >
-                    {s.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className={labelClass}>Interés</label>
-              <div className="flex gap-1">
-                {["Frío", "Tibio", "Caliente"].map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, temperatura: t })}
-                    className={`flex-1 py-2 rounded-xl text-[12px] border transition-all ${formData.temperatura === t ? "bg-white border-indigo-500 shadow-sm" : "bg-white border-slate-100 opacity-40"}`}
-                  >
-                    {t === "Frío" ? "❄️" : t === "Tibio" ? "☀️" : "🔥"}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className={labelClass}>Observaciones</label>
-            <textarea
-              rows="2"
-              value={formData.comentarios}
-              onChange={(e) =>
-                setFormData({ ...formData, comentarios: e.target.value })
-              }
-              className={`${inputClass} normal-case h-16 resize-none py-2`}
-              placeholder="Notas adicionales..."
-            ></textarea>
-          </div>
-
-          <div className="flex gap-4 pt-4 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-3 text-[10px] font-black uppercase text-slate-400"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="flex-[2] bg-[#4F46E5] text-white py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all"
-            >
-              {leadToEdit ? "Guardar Cambios" : "Completar Registro"}
-            </button>
-          </div>
-        </form>
+        <div className="p-5 border-t border-slate-100 bg-slate-50/50 shrink-0 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-6 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 hover:bg-slate-200/50 rounded-xl transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form="lead-form"
+            className="bg-[#4F46E5] text-white px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-indigo-700 active:scale-95 transition-all"
+          >
+            Guardar Cliente
+          </button>
+        </div>
       </div>
     </div>
   );

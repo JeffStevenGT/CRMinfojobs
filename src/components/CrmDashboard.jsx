@@ -153,15 +153,18 @@ export default function CrmDashboard() {
 
                 <div className="flex items-center gap-3 self-end lg:self-auto scale-90 lg:scale-100 origin-right">
                   <div className={containerStyle}>
-                    {["todos", "CLM", "Lideres", "Sandetel"].map((p) => (
-                      <button
-                        key={p}
-                        onClick={() => setProjectFilter(p)}
-                        className={`${btnBase} ${projectFilter === p ? (p === "todos" ? "bg-slate-800 text-white" : p === "CLM" ? "bg-indigo-600 text-white" : p === "Lideres" ? "bg-amber-500 text-white" : "bg-cyan-500 text-white") : "text-slate-400"}`}
-                      >
-                        {p}
-                      </button>
-                    ))}
+                    {/* AQUI SE AGREGÓ MASDIGITAL */}
+                    {["todos", "CLM", "Lideres", "Sandetel", "MasDigital"].map(
+                      (p) => (
+                        <button
+                          key={p}
+                          onClick={() => setProjectFilter(p)}
+                          className={`${btnBase} ${projectFilter === p ? (p === "todos" ? "bg-slate-800 text-white" : p === "CLM" ? "bg-indigo-600 text-white" : p === "Lideres" ? "bg-amber-500 text-white" : p === "Sandetel" ? "bg-cyan-500 text-white" : "bg-fuchsia-500 text-white") : "text-slate-400"}`}
+                        >
+                          {p}
+                        </button>
+                      ),
+                    )}
                   </div>
                   <div className="h-6 w-px bg-slate-200 mx-1"></div>
                   <div className={containerStyle}>
