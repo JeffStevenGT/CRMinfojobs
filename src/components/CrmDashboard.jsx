@@ -89,93 +89,6 @@ export default function CrmDashboard() {
     }
   };
 
-  // --- BOTÓN MÁGICO DE PRUEBA (Para Testear Reportes y Tablas) ---
-  const injectTestLeads = async () => {
-    const testData = [
-      {
-        nombre: "Ana Líderes (Fin)",
-        whatsapp: "600111222",
-        proyecto: "Lideres",
-        estado: "Inscrito",
-        status: "finalizado",
-        fechaInicioClase: "2026-01-10",
-        fechaFinClase: "2026-02-15",
-        situacion: "Trabajador",
-        provincia: "Madrid",
-        fechaCreacion: new Date().toISOString(),
-        asistencia: Array(20).fill(true),
-      },
-      {
-        nombre: "Carlos Sandetel (Fin)",
-        whatsapp: "600333444",
-        proyecto: "Sandetel",
-        estado: "Inscrito",
-        status: "finalizado",
-        fechaInicioClase: "2026-02-05",
-        fechaFinClase: "2026-03-20",
-        situacion: "Autonomo",
-        provincia: "Barcelona",
-        fechaCreacion: new Date().toISOString(),
-        asistencia: Array(20).fill(true),
-      },
-      {
-        nombre: "Lucía Líderes (Curso)",
-        whatsapp: "600555666",
-        proyecto: "Lideres",
-        estado: "Inscrito",
-        status: "en curso",
-        situacion: "Trabajador",
-        provincia: "Valencia",
-        asistencia: [
-          false,
-          false,
-          true,
-          true,
-          true,
-          true,
-          true,
-          true,
-          true,
-          true,
-          true,
-          true,
-          true,
-          true,
-          true,
-          true,
-          true,
-          true,
-          true,
-          true,
-        ],
-        fechaCreacion: new Date().toISOString(),
-      },
-      {
-        nombre: "Jorge Sandetel (Pend)",
-        whatsapp: "600777888",
-        proyecto: "Sandetel",
-        estado: "Inscrito",
-        status: "pendiente",
-        situacion: "Autonomo",
-        provincia: "Sevilla",
-        doc1: false,
-        doc2: true,
-        tieneUsuarios: false,
-        fechaCreacion: new Date().toISOString(),
-      },
-    ];
-
-    try {
-      for (const data of testData) {
-        await addDoc(collection(db, "leads"), data);
-      }
-      notify("🤖 4 Leads inyectados con éxito");
-    } catch (e) {
-      console.error(e);
-      notify("Error al inyectar", "error");
-    }
-  };
-
   const filteredLeads = leadsCLM
     .filter((l) => {
       const b = searchTerm.toLowerCase();
@@ -265,14 +178,6 @@ export default function CrmDashboard() {
                       Tablero
                     </button>
                   </div>
-
-                  {/* BOTÓN DE INYECCIÓN DE PRUEBAS */}
-                  <button
-                    onClick={injectTestLeads}
-                    className="bg-emerald-500 text-white px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase shadow-xl hover:bg-emerald-600 transition-colors"
-                  >
-                    🧪 Testing
-                  </button>
 
                   <button
                     onClick={() => {
