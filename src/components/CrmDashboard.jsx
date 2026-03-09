@@ -7,6 +7,7 @@ import AgendaView from "./agenda/AgendaView";
 import ReportsView from "./reports/ReportsView";
 import LeadFormModal from "./leads/LeadFormModal";
 import FollowUpModal from "./leads/FollowUpModal";
+import ExportModal from "./leads/ExportModal";
 import { db } from "../firebase";
 import {
   collection,
@@ -27,6 +28,7 @@ export default function CrmDashboard() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFollowUpOpen, setIsFollowUpOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
   const [leadToEdit, setLeadToEdit] = useState(null);
   const [leadToFollow, setLeadToFollow] = useState(null);
   const [commentModal, setCommentModal] = useState({
@@ -128,11 +130,13 @@ export default function CrmDashboard() {
         </div>
       )}
 
+      {/* AQUÍ SE CONECTA EL SIDEBAR CON EL MODAL */}
       <Sidebar
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        onExportClick={() => setIsExportOpen(true)}
       />
 
       <main className="flex-1 flex flex-col min-w-0 bg-[#F9FAFB] h-full overflow-hidden">
@@ -153,7 +157,6 @@ export default function CrmDashboard() {
 
                 <div className="flex items-center gap-3 self-end lg:self-auto scale-90 lg:scale-100 origin-right">
                   <div className={containerStyle}>
-                    {/* AQUI SE AGREGÓ MASDIGITAL */}
                     {["todos", "CLM", "Lideres", "Sandetel", "MasDigital"].map(
                       (p) => (
                         <button
@@ -187,7 +190,7 @@ export default function CrmDashboard() {
                       setLeadToEdit(null);
                       setIsModalOpen(true);
                     }}
-                    className="bg-[#4F46E5] text-white px-8 py-2.5 rounded-2xl text-[10px] font-black uppercase shadow-xl"
+                    className="bg-[#4F46E5] text-white px-8 py-2.5 rounded-2xl text-[10px] font-black uppercase shadow-xl hover:bg-indigo-700 transition-colors"
                   >
                     + Nuevo
                   </button>
@@ -272,6 +275,10 @@ export default function CrmDashboard() {
       </main>
 
       {/* --- ZONA DE MODALES --- */}
+
+      {isExportOpen && (
+        <ExportModal leads={leadsCLM} onClose={() => setIsExportOpen(false)} />
+      )}
 
       {isModalOpen && (
         <LeadFormModal

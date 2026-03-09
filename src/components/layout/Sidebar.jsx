@@ -5,6 +5,7 @@ export default function Sidebar({
   setIsOpen,
   activeTab,
   setActiveTab,
+  onExportClick, // <-- Recibe la orden para abrir el modal
 }) {
   const menuItems = [
     { id: "clientes-clm", label: "DIRECTORIO", icon: "📋" },
@@ -47,7 +48,7 @@ export default function Sidebar({
         </button>
       </div>
 
-      <nav className="flex-1 px-3 mt-4 space-y-2">
+      <nav className="flex-1 px-3 mt-4 space-y-2 flex flex-col">
         {menuItems.map((item) => (
           <button
             key={item.id}
@@ -63,6 +64,24 @@ export default function Sidebar({
             )}
           </button>
         ))}
+
+        {/* --- LÍNEA DIVISORIA Y BOTÓN DE EXPORTAR --- */}
+        <div
+          className={`border-t border-slate-100 my-2 transition-all ${isOpen ? "mx-4" : "mx-2 w-8 self-center"}`}
+        ></div>
+
+        <button
+          onClick={onExportClick}
+          title={!isOpen ? "EXPORTAR" : ""}
+          className={`w-full flex items-center rounded-2xl transition-all duration-300 ${isOpen ? "px-4 py-3.5 gap-4" : "p-4 justify-center"} text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-100`}
+        >
+          <span className="text-lg">📥</span>
+          {isOpen && (
+            <span className="text-[10px] font-black uppercase tracking-widest">
+              EXPORTAR DATA
+            </span>
+          )}
+        </button>
       </nav>
 
       {isOpen && (
