@@ -111,6 +111,10 @@ export default function LeadTable({
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [estadoFilter, setEstadoFilter] = useState("Todos");
 
+  // --- NUEVA LÓGICA DE PAGINACIÓN AGREGADA ---
+  const [paginaActual, setPaginaActual] = useState(1);
+  const LEADS_POR_PAGINA = 10;
+
   const handleCopy = (id, text, type) => {
     const val = type === "tel" ? "+34" + text.replace(/\s+/g, "") : text;
     navigator.clipboard.writeText(val);
@@ -118,7 +122,6 @@ export default function LeadTable({
     setTimeout(() => setCopiedId(null), 1500);
   };
 
-  // AJUSTE: Centrado vertical (justify-center) en el contenedor interior.
   const capsuleStyle =
     "bg-white/60 backdrop-blur-sm hover:bg-white/95 transition-all duration-300 rounded-xl px-2.5 py-1.5 border border-white/60 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex flex-col h-full w-full relative justify-center";
 
@@ -132,7 +135,7 @@ export default function LeadTable({
     { id: "No Interesado", label: "No Interesados", icon: "🛑" },
   ];
 
-  const leadsFiltrados = leads.filter((l) => {
+  const leadsFiltradosTotal = leads.filter((l) => {
     if (estadoFilter === "Todos") return true;
     if (estadoFilter === "No Apto")
       return l.estado === "Inscrito" && l.status === "no apto";
@@ -140,6 +143,12 @@ export default function LeadTable({
       return l.estado === "Inscrito" && l.status !== "no apto";
     return l.estado === estadoFilter;
   });
+
+  // --- CÁLCULOS DE PAGINACIÓN ---
+  const ultimoIndice = paginaActual * LEADS_POR_PAGINA;
+  const primerIndice = ultimoIndice - LEADS_POR_PAGINA;
+  const leadsPaginados = leadsFiltradosTotal.slice(primerIndice, ultimoIndice);
+  const totalPaginas = Math.ceil(leadsFiltradosTotal.length / LEADS_POR_PAGINA);
 
   return (
     <div
@@ -164,7 +173,10 @@ export default function LeadTable({
           return (
             <button
               key={f.id}
-              onClick={() => setEstadoFilter(f.id)}
+              onClick={() => {
+                setEstadoFilter(f.id);
+                setPaginaActual(1); // Reset a pág 1 al filtrar
+              }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap shadow-sm border ${isActive ? "bg-indigo-600 text-white border-indigo-500" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-indigo-600"}`}
             >
               <span>{f.icon}</span>
@@ -179,7 +191,7 @@ export default function LeadTable({
         })}
       </div>
 
-      <div className="overflow-x-auto custom-scrollbar pb-32 p-2 flex-1">
+      <div className="overflow-x-auto custom-scrollbar p-2 flex-1">
         <table className="min-w-full text-left border-separate border-spacing-y-1.5">
           <thead className="bg-transparent">
             <tr className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">
@@ -193,7 +205,7 @@ export default function LeadTable({
             </tr>
           </thead>
           <tbody>
-            {leadsFiltrados.map((lead) => {
+            {leadsPaginados.map((lead) => {
               const asistencias = (lead.asistencia || []).filter(
                 (d) => d,
               ).length;
@@ -232,9 +244,7 @@ export default function LeadTable({
                   key={lead.id}
                   className={`group border-l-4 rounded-xl ${rowColorClass} ${borderColor} relative ${isRowActive ? "z-50" : "z-0"}`}
                 >
-                  {/* AJUSTE: Cambiado align-top por align-middle en todos los <td> */}
                   <td className="p-0.5 align-middle min-w-[200px]">
-                    {/* AJUSTE: Mantenemos items-start para los textos, pero justify-center centra todo el bloque */}
                     <div
                       className={`${capsuleStyle} items-start ${isRowActive ? "z-50" : "z-0"}`}
                     >
@@ -305,12 +315,6 @@ export default function LeadTable({
                           )}
                         />
                       </div>
-
-                      {isReferido && lead.quienRefirio && (
-                        <div className="text-[7px] text-indigo-500 font-bold mt-1 w-full truncate leading-none">
-                          Rec: {lead.quienRefirio}
-                        </div>
-                      )}
                     </div>
                   </td>
 
@@ -324,7 +328,6 @@ export default function LeadTable({
                           onClick={() =>
                             handleCopy(lead.id, lead.whatsapp, "tel")
                           }
-                          title="Copiar teléfono"
                         >
                           <span>+34 {lead.whatsapp}</span>
                           <svg
@@ -341,7 +344,6 @@ export default function LeadTable({
                             />
                           </svg>
                         </div>
-
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -352,11 +354,6 @@ export default function LeadTable({
                             );
                           }}
                           className={`p-1.5 rounded-lg border shadow-sm transition-all active:scale-95 ${lead.respondioWpp ? "bg-emerald-50 border-emerald-200 text-emerald-500" : "bg-white border-slate-100 text-slate-300 hover:text-emerald-400 hover:border-emerald-100"}`}
-                          title={
-                            lead.respondioWpp
-                              ? "Respondió WhatsApp"
-                              : "No respondió"
-                          }
                         >
                           <svg
                             className="w-3.5 h-3.5"
@@ -367,13 +364,11 @@ export default function LeadTable({
                           </svg>
                         </button>
                       </div>
-
                       <div
-                        className={`flex items-center w-full gap-1 px-2 py-1 bg-white rounded-lg border border-slate-100 shadow-sm ${lead.email ? "group cursor-pointer hover:border-sky-200 transition-colors" : ""}`}
+                        className={`flex items-center w-full gap-1 px-2 py-1 bg-white rounded-lg border border-slate-100 shadow-sm ${lead.email ? "group cursor-pointer hover:border-sky-200" : ""}`}
                         onClick={() =>
                           lead.email && handleCopy(lead.id, lead.email, "mail")
                         }
-                        title="Copiar email"
                       >
                         <span
                           className={`text-[8px] font-bold truncate flex-1 ${lead.email ? "text-slate-500" : "text-slate-300 italic"}`}
@@ -382,7 +377,7 @@ export default function LeadTable({
                         </span>
                         {lead.email && (
                           <svg
-                            className={`w-3 h-3 transition-transform ${copiedId === lead.id + "mail" ? "text-emerald-500 drop-shadow-sm scale-110" : "text-slate-300 group-hover:text-slate-500"}`}
+                            className={`w-3 h-3 transition-transform ${copiedId === lead.id + "mail" ? "text-emerald-500 scale-110" : "text-slate-300 group-hover:text-slate-500"}`}
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -400,118 +395,50 @@ export default function LeadTable({
                   </td>
 
                   <td className="p-0.5 align-middle w-[120px]">
-                    <div
-                      className={`${capsuleStyle} items-center ${isRowActive ? "z-50" : "z-0"}`}
-                    >
-                      <div className="flex items-center gap-1 w-full justify-center">
-                        <div className="flex-1 min-w-0">
-                          <AccordionSelect
-                            value={lead.estado}
-                            isOpen={openDropdownId === lead.id + "st"}
-                            onToggle={() =>
-                              setOpenDropdownId(
-                                openDropdownId === lead.id + "st"
-                                  ? null
-                                  : lead.id + "st",
-                              )
-                            }
-                            options={[
-                              { value: "Agendado", label: "Agendado" },
-                              { value: "Interesado", label: "Interesado" },
-                              { value: "Registrado", label: "Registrado" },
-                              { value: "Inscrito", label: "Matriculado" },
-                              {
-                                value: "No Interesado",
-                                label: "No Interesado",
-                              },
-                            ]}
-                            onChange={(v) => onUpdateLead(lead.id, "estado", v)}
-                            renderBadge={(v) => {
-                              const c =
-                                v === "Inscrito"
-                                  ? "text-emerald-700 bg-emerald-100 border-emerald-200"
-                                  : v === "Registrado"
-                                    ? "text-purple-700 bg-purple-100 border-purple-200"
-                                    : v === "No Interesado"
-                                      ? "text-red-600 bg-red-50 border-red-200"
-                                      : v === "Interesado"
-                                        ? "text-violet-700 bg-violet-50 border-violet-200"
-                                        : "text-sky-700 bg-sky-50 border-sky-200";
-                              const displayLabel =
-                                v === "Inscrito"
-                                  ? "Matriculado"
-                                  : v === "No Interesado"
-                                    ? "No Interesado"
-                                    : v;
-                              return (
-                                <span
-                                  className={`px-1 flex items-center justify-center h-[24px] w-full text-center rounded-lg text-[7.5px] font-black uppercase shadow-sm border truncate ${c}`}
-                                >
-                                  {displayLabel}
-                                </span>
-                              );
-                            }}
-                          />
-                        </div>
-
-                        {(lead.estado === "Agendado" ||
-                          lead.estado === "Interesado") && (
-                          <div className="w-[24px] shrink-0">
-                            <AccordionSelect
-                              compact={true}
-                              value={lead.temperatura || "Tibio"}
-                              isOpen={openDropdownId === lead.id + "temp"}
-                              onToggle={() =>
-                                setOpenDropdownId(
-                                  openDropdownId === lead.id + "temp"
-                                    ? null
-                                    : lead.id + "temp",
-                                )
-                              }
-                              options={[
-                                { value: "Frío", label: "❄️ Frío" },
-                                { value: "Tibio", label: "☀️ Tibio" },
-                                { value: "Caliente", label: "🔥 Alto" },
-                              ]}
-                              onChange={(v) =>
-                                onUpdateLead(lead.id, "temperatura", v)
-                              }
-                              renderBadge={(v) => {
-                                let colorClass =
-                                  "bg-amber-50 text-amber-500 border-amber-200";
-                                let icon = "☀️";
-                                if (v === "Caliente") {
-                                  colorClass =
-                                    "bg-orange-50 text-orange-500 border-orange-200";
-                                  icon = "🔥";
-                                }
-                                if (v === "Frío") {
-                                  colorClass =
-                                    "bg-sky-50 text-sky-500 border-sky-200";
-                                  icon = "❄️";
-                                }
-                                return (
-                                  <div
-                                    className={`w-full h-[24px] flex items-center justify-center rounded-lg border shadow-sm cursor-pointer hover:brightness-95 transition-all ${colorClass}`}
-                                    title={`Temperatura: ${v}`}
-                                  >
-                                    <span className="text-[10px] leading-none">
-                                      {icon}
-                                    </span>
-                                  </div>
-                                );
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
+                    <div className={`${capsuleStyle} items-center`}>
+                      <AccordionSelect
+                        value={lead.estado}
+                        isOpen={openDropdownId === lead.id + "st"}
+                        onToggle={() =>
+                          setOpenDropdownId(
+                            openDropdownId === lead.id + "st"
+                              ? null
+                              : lead.id + "st",
+                          )
+                        }
+                        options={[
+                          { value: "Agendado", label: "Agendado" },
+                          { value: "Interesado", label: "Interesado" },
+                          { value: "Registrado", label: "Registrado" },
+                          { value: "Inscrito", label: "Matriculado" },
+                          { value: "No Interesado", label: "No Interesado" },
+                        ]}
+                        onChange={(v) => onUpdateLead(lead.id, "estado", v)}
+                        renderBadge={(v) => {
+                          const c =
+                            v === "Inscrito"
+                              ? "text-emerald-700 bg-emerald-100 border-emerald-200"
+                              : v === "Registrado"
+                                ? "text-purple-700 bg-purple-100 border-purple-200"
+                                : v === "No Interesado"
+                                  ? "text-red-600 bg-red-50 border-red-200"
+                                  : v === "Interesado"
+                                    ? "text-violet-700 bg-violet-50 border-violet-200"
+                                    : "text-sky-700 bg-sky-50 border-sky-200";
+                          return (
+                            <span
+                              className={`px-1 flex items-center justify-center h-[24px] w-full text-center rounded-lg text-[7.5px] font-black uppercase shadow-sm border truncate ${c}`}
+                            >
+                              {v === "Inscrito" ? "Matriculado" : v}
+                            </span>
+                          );
+                        }}
+                      />
                     </div>
                   </td>
 
                   <td className="p-0.5 align-middle w-[110px]">
-                    <div
-                      className={`${capsuleStyle} items-center ${isRowActive ? "z-50" : "z-0"}`}
-                    >
+                    <div className={`${capsuleStyle} items-center`}>
                       {lead.estado === "Inscrito" ? (
                         <AccordionSelect
                           value={lead.status || "en curso"}
@@ -531,30 +458,24 @@ export default function LeadTable({
                             { value: "no apto", label: "No Apto" },
                           ]}
                           onChange={(v) => {
-                            if (v === "finalizado") {
-                              onFinalize(lead);
-                            } else {
-                              onUpdateLead(lead.id, "status", v);
-                            }
+                            if (v === "finalizado") onFinalize(lead);
+                            else onUpdateLead(lead.id, "status", v);
                           }}
                           renderBadge={(v) => {
-                            let badgeClass =
-                              "bg-blue-500 text-white border-blue-600";
+                            let bc = "bg-blue-500 text-white border-blue-600";
                             if (v === "finalizado")
-                              badgeClass =
+                              bc =
                                 "bg-emerald-500 text-white border-emerald-600";
                             if (v === "abandonado")
-                              badgeClass =
-                                "bg-orange-500 text-white border-orange-600";
+                              bc = "bg-orange-500 text-white border-orange-600";
                             if (v === "no apto")
-                              badgeClass =
+                              bc =
                                 "bg-rose-600 text-white border-rose-700 animate-pulse shadow-rose-200";
                             if (v === "pendiente")
-                              badgeClass =
-                                "bg-slate-600 text-white border-slate-700";
+                              bc = "bg-slate-600 text-white border-slate-700";
                             return (
                               <span
-                                className={`px-2 py-1.5 w-full text-center rounded-lg text-[8px] font-black uppercase shadow-sm border ${badgeClass}`}
+                                className={`px-2 py-1.5 w-full text-center rounded-lg text-[8px] font-black uppercase shadow-sm border ${bc}`}
                               >
                                 {v}
                               </span>
@@ -570,25 +491,10 @@ export default function LeadTable({
                   </td>
 
                   <td className="p-0.5 align-middle w-[130px]">
-                    <div
-                      className={`${capsuleStyle} items-center gap-1.5 ${isRowActive ? "z-50" : "z-0"}`}
-                    >
+                    <div className={`${capsuleStyle} items-center gap-1.5`}>
                       {lead.estado === "Agendado" && (
                         <div className="flex flex-col items-center gap-1 w-full">
                           <span className="text-[6.5px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-0.5">
-                            <svg
-                              className="w-2 h-2 text-indigo-400"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2.5}
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                              />
-                            </svg>
                             Agendar Cita
                           </span>
                           <ElegantDatePicker
@@ -600,7 +506,6 @@ export default function LeadTable({
                           />
                         </div>
                       )}
-
                       {lead.estado === "Interesado" && (
                         <div className="flex flex-col items-center gap-1 w-full">
                           <AccordionSelect
@@ -622,7 +527,7 @@ export default function LeadTable({
                               onUpdateLead(lead.id, "horario", v)
                             }
                             renderBadge={(v) => (
-                              <span className="text-[8px] font-bold text-indigo-600 bg-white border border-indigo-100 px-2 py-1 w-full text-center rounded-lg uppercase shadow-sm cursor-pointer hover:border-indigo-300 hover:bg-indigo-50 transition-colors">
+                              <span className="text-[8px] font-bold text-indigo-600 bg-white border border-indigo-100 px-2 py-1 w-full text-center rounded-lg uppercase">
                                 Turno: {v || "---"}
                               </span>
                             )}
@@ -647,34 +552,19 @@ export default function LeadTable({
                           </div>
                         </div>
                       )}
-
                       {(lead.estado === "Registrado" ||
                         (lead.estado === "Inscrito" &&
                           lead.status === "pendiente")) && (
                         <div className="flex flex-col items-center gap-1 w-full">
                           <span className="text-[6.5px] font-black text-purple-400 uppercase tracking-widest flex items-center gap-0.5">
-                            <svg
-                              className="w-2 h-2"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2.5}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                              />
-                            </svg>
                             Operaciones
                           </span>
-
                           <div className="flex gap-1 w-full">
                             <button
                               onClick={() =>
                                 onUpdateLead(lead.id, "doc1", !lead.doc1)
                               }
-                              className={`flex-1 py-1 rounded-lg border text-[8px] font-black transition-colors ${lead.doc1 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
+                              className={`flex-1 py-1 rounded-lg border text-[8px] font-black ${lead.doc1 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
                             >
                               {lead.situacion === "Autonomo" ? "REC" : "NOM"}
                             </button>
@@ -682,91 +572,57 @@ export default function LeadTable({
                               onClick={() =>
                                 onUpdateLead(lead.id, "doc2", !lead.doc2)
                               }
-                              className={`flex-1 py-1 rounded-lg border text-[8px] font-black transition-colors ${lead.doc2 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
+                              className={`flex-1 py-1 rounded-lg border text-[8px] font-black ${lead.doc2 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
                             >
                               {lead.situacion === "Autonomo" ? "IAE" : "CON"}
                             </button>
                           </div>
-
-                          {lead.estado === "Inscrito" &&
-                            lead.status === "pendiente" && (
-                              <button
-                                onClick={() =>
-                                  onUpdateLead(
-                                    lead.id,
-                                    "tieneUsuarios",
-                                    !lead.tieneUsuarios,
-                                  )
-                                }
-                                className={`w-full py-1 rounded-lg border text-[7.5px] font-black uppercase transition-all flex items-center justify-center gap-1 ${lead.tieneUsuarios ? "bg-sky-50 text-sky-600 border-sky-200" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
-                              >
-                                🔑{" "}
-                                {lead.tieneUsuarios
-                                  ? "Accesos Creados"
-                                  : "Sin Accesos"}
-                              </button>
-                            )}
+                          {lead.estado === "Inscrito" && (
+                            <button
+                              onClick={() =>
+                                onUpdateLead(
+                                  lead.id,
+                                  "tieneUsuarios",
+                                  !lead.tieneUsuarios,
+                                )
+                              }
+                              className={`w-full py-1 rounded-lg border text-[7.5px] font-black uppercase ${lead.tieneUsuarios ? "bg-sky-50 text-sky-600 border-sky-200" : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
+                            >
+                              {lead.tieneUsuarios
+                                ? "🔑 Accesos"
+                                : "🔓 Sin Accesos"}
+                            </button>
+                          )}
                         </div>
                       )}
-
                       {lead.estado === "Inscrito" &&
                         lead.status === "en curso" && (
                           <div className="flex flex-col gap-1.5 w-full">
                             <button
                               onClick={() => onManageLead(lead)}
-                              className="group w-full bg-white text-slate-600 px-2 py-1.5 rounded-lg text-[8.5px] font-black tracking-widest uppercase border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all shadow-sm flex items-center justify-center gap-1 active:scale-95"
+                              className="w-full bg-white text-slate-600 px-2 py-1.5 rounded-lg text-[8.5px] font-black uppercase border border-slate-200 hover:bg-indigo-50 transition-all flex items-center justify-center gap-1 active:scale-95"
                             >
-                              <svg
-                                className="w-3 h-3 text-indigo-400 group-hover:rotate-90 transition-transform duration-500"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2.5}
-                                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                                />
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2.5}
-                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                />
-                              </svg>
                               Panel Alumno
                             </button>
                             <button
                               onClick={() => onFollowUp(lead)}
-                              className={`w-full py-1.5 rounded-lg border text-[8.5px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm hover:shadow ${nFaltas >= 3 ? "bg-rose-500 text-white border-rose-600 ring-2 ring-rose-200 shadow-rose-200" : nFaltas > 0 ? "bg-amber-50 text-amber-600 border-amber-300" : "bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50"}`}
+                              className={`w-full py-1.5 rounded-lg border text-[8.5px] font-black uppercase flex items-center justify-center gap-1.5 transition-all shadow-sm ${nFaltas >= 3 ? "bg-rose-500 text-white border-rose-600" : nFaltas > 0 ? "bg-amber-50 text-amber-600 border-amber-300" : "bg-white text-emerald-600 border-emerald-200"}`}
                             >
-                              <div
-                                className={`w-1.5 h-1.5 rounded-full shadow-sm border border-white/50 ${nFaltas >= 3 ? "bg-white animate-pulse" : nFaltas > 0 ? "bg-amber-500" : "bg-emerald-400"}`}
-                              ></div>
                               {nFaltas} Faltas
                             </button>
                           </div>
                         )}
-
-                      {lead.estado === "No Interesado" && (
-                        <span className="text-slate-300 text-[8.5px] font-bold uppercase tracking-widest bg-white px-2 py-1 rounded-lg border border-slate-100">
-                          Cerrado
-                        </span>
-                      )}
                     </div>
                   </td>
 
                   <td className="p-0.5 align-middle w-[60px]">
-                    <div
-                      className={`${capsuleStyle} items-center ${isRowActive ? "z-50" : "z-0"}`}
-                    >
+                    <div className={`${capsuleStyle} items-center`}>
                       {lead.comentarios ? (
                         <button
                           onClick={() =>
                             onViewComment(lead.comentarios, lead.nombre)
                           }
-                          className="bg-indigo-50 text-indigo-600 p-2 rounded-xl hover:bg-indigo-100 transition-colors border border-indigo-200 shadow-sm active:scale-95 group"
+                          className="bg-indigo-50 text-indigo-600 p-2 rounded-xl hover:bg-indigo-100 transition-colors border border-indigo-200 shadow-sm active:scale-95 group cursor-pointer"
                         >
                           <svg
                             className="w-4 h-4 group-hover:scale-110 transition-transform"
@@ -791,37 +647,43 @@ export default function LeadTable({
                   </td>
                   <td className="p-0.5 align-middle w-[80px]">
                     <div
-                      className={`${capsuleStyle} flex-row items-center gap-1.5 ${isRowActive ? "z-50" : "z-0"}`}
+                      className={`${capsuleStyle} flex-row items-center gap-1.5`}
                     >
                       <button
                         onClick={() => onEditLead(lead)}
-                        className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-indigo-600 hover:border-indigo-200 shadow-sm hover:shadow active:scale-95 transition-all"
+                        className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-indigo-700 shadow-sm transition-all active:scale-95 cursor-pointer"
                       >
                         <svg
-                          className="w-3.5 h-3.5"
+                          xmlns="http://www.w3.org/2000/svg"
                           fill="none"
-                          stroke="currentColor"
                           viewBox="0 0 24 24"
+                          stroke-width="1.5"
+                          stroke="currentColor"
+                          class="size-5"
                         >
                           <path
-                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                            strokeWidth={2.5}
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
                           />
                         </svg>
                       </button>
                       <button
                         onClick={() => onDeleteLead(lead.id)}
-                        className="p-1.5 bg-white border border-slate-200 rounded-lg text-rose-300 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 shadow-sm hover:shadow active:scale-95 transition-all"
+                        className="p-1.5 bg-white border border-slate-200 rounded-lg text-rose-400 hover:text-rose-600 shadow-sm transition-all active:scale-95 cursor-pointer"
                       >
                         <svg
-                          className="w-3.5 h-3.5"
+                          xmlns="http://www.w3.org/2000/svg"
                           fill="none"
-                          stroke="currentColor"
                           viewBox="0 0 24 24"
+                          stroke-width="1.5"
+                          stroke="currentColor"
+                          class="size-5"
                         >
                           <path
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            strokeWidth={2.5}
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
                           />
                         </svg>
                       </button>
@@ -830,19 +692,39 @@ export default function LeadTable({
                 </tr>
               );
             })}
-
-            {leadsFiltrados.length === 0 && (
-              <tr>
-                <td
-                  colSpan="7"
-                  className="p-8 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]"
-                >
-                  No hay clientes en esta categoría
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
+      </div>
+
+      {/* --- BOTONES DE PAGINACIÓN AL FINAL --- */}
+      <div className="px-8 py-5 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between shrink-0">
+        <div className="flex flex-col">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            MOSTRANDO {leadsPaginados.length} DE {leadsFiltradosTotal.length}{" "}
+            CLIENTES
+          </p>
+          <p className="text-[9px] font-bold text-slate-300 uppercase italic">
+            Página {paginaActual} de {totalPaginas || 1}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setPaginaActual((prev) => Math.max(prev - 1, 1))}
+            disabled={paginaActual === 1}
+            className="px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-white text-slate-500 border border-slate-200 disabled:opacity-30 hover:bg-slate-100 transition-all shadow-sm"
+          >
+            ← ANTERIOR
+          </button>
+          <button
+            onClick={() =>
+              setPaginaActual((prev) => Math.min(prev + 1, totalPaginas))
+            }
+            disabled={paginaActual === totalPaginas || totalPaginas === 0}
+            className="px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white disabled:opacity-30 hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
+          >
+            SIGUIENTE →
+          </button>
+        </div>
       </div>
     </div>
   );
