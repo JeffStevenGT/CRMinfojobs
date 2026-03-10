@@ -2,13 +2,14 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "./layout/Sidebar";
 import Header from "./layout/Header";
 import LeadTable from "./leads/LeadTable";
-import KanbanView from "./leads/KanbanView";
 import AgendaView from "./agenda/AgendaView";
 import ReportsView from "./reports/ReportsView";
+import AdminUsersView from "./admin/AdminUsersView";
 import LeadFormModal from "./leads/LeadFormModal";
 import FollowUpModal from "./leads/FollowUpModal";
 import ExportModal from "./leads/ExportModal";
 import { db } from "../firebase";
+import { getAuth, signOut } from "firebase/auth";
 import {
   collection,
   onSnapshot,
@@ -23,7 +24,6 @@ export default function CrmDashboard() {
   const [activeTab, setActiveTab] = useState("clientes-clm");
   const [leadsCLM, setLeadsCLM] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState("kanban");
   const [projectFilter, setProjectFilter] = useState("todos");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,6 +31,8 @@ export default function CrmDashboard() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [leadToEdit, setLeadToEdit] = useState(null);
   const [leadToFollow, setLeadToFollow] = useState(null);
+
+  // Estados para los modales operativos
   const [commentModal, setCommentModal] = useState({
     open: false,
     text: "",
@@ -50,6 +52,9 @@ export default function CrmDashboard() {
     type: "success",
   });
 
+  // ⚠️ TEMPORAL: Para que veas el panel de Usuarios. Luego esto vendrá de tu Login.
+  const isAdmin = true;
+
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "leads"), (snapshot) => {
       setLeadsCLM(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
@@ -63,6 +68,20 @@ export default function CrmDashboard() {
       () => setToast({ show: false, message: "", type: "success" }),
       3500,
     );
+  };
+
+  const handleLogout = () => {
+    if (window.confirm("¿Seguro que deseas cerrar sesión?")) {
+      const auth = getAuth();
+      signOut(auth)
+        .then(() => {
+          window.location.href = "/";
+        })
+        .catch((error) => {
+          console.error("Error cerrando sesión", error);
+          window.location.reload();
+        });
+    }
   };
 
   const handleSaveLead = async (data) => {
@@ -130,19 +149,22 @@ export default function CrmDashboard() {
         </div>
       )}
 
-      {/* AQUÍ SE CONECTA EL SIDEBAR CON EL MODAL */}
+      {/* --- SIDEBAR --- */}
       <Sidebar
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onExportClick={() => setIsExportOpen(true)}
+        onLogout={handleLogout}
+        isAdmin={isAdmin}
       />
 
       <main className="flex-1 flex flex-col min-w-0 bg-[#F9FAFB] h-full overflow-hidden">
         <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
 
         <div className="flex-1 overflow-hidden p-4 lg:p-6 flex flex-col">
+          {/* VISTA 1: TABLA DE CLIENTES MULTICAMPAÑA */}
           {activeTab === "clientes-clm" && (
             <div className="max-w-full mx-auto space-y-4 h-full flex flex-col w-full">
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 px-2 shrink-0">
@@ -169,22 +191,6 @@ export default function CrmDashboard() {
                       ),
                     )}
                   </div>
-                  <div className="h-6 w-px bg-slate-200 mx-1"></div>
-                  <div className={containerStyle}>
-                    <button
-                      onClick={() => setViewMode("table")}
-                      className={`${btnBase} ${viewMode === "table" ? "bg-white text-indigo-600 shadow-md" : "text-slate-400"}`}
-                    >
-                      Tabla
-                    </button>
-                    <button
-                      onClick={() => setViewMode("kanban")}
-                      className={`${btnBase} ${viewMode === "kanban" ? "bg-white text-indigo-600 shadow-md" : "text-slate-400"}`}
-                    >
-                      Tablero
-                    </button>
-                  </div>
-
                   <button
                     onClick={() => {
                       setLeadToEdit(null);
@@ -198,66 +204,41 @@ export default function CrmDashboard() {
               </div>
 
               <div className="flex-1 min-h-0 h-full board-container overflow-x-auto overflow-y-auto">
-                {viewMode === "table" ? (
-                  <LeadTable
-                    leads={filteredLeads}
-                    onUpdateLead={(id, c, v) =>
-                      updateDoc(doc(db, "leads", id), { [c]: v })
-                    }
-                    onEditLead={(l) => {
-                      setLeadToEdit(l);
-                      setIsModalOpen(true);
-                    }}
-                    onFollowUp={(l) => {
-                      setLeadToFollow(l);
-                      setIsFollowUpOpen(true);
-                    }}
-                    onDeleteLead={(id) =>
-                      window.confirm("¿Eliminar?") &&
-                      deleteDoc(doc(db, "leads", id))
-                    }
-                    onFinalize={(l) =>
-                      setFinalizeModal({
-                        open: true,
-                        lead: l,
-                        fechaInicio: "",
-                        fechaFin: "",
-                      })
-                    }
-                    onViewComment={(text, author) =>
-                      setCommentModal({ open: true, text, author })
-                    }
-                    onManageLead={(l) =>
-                      setManageModal({ open: true, lead: l })
-                    }
-                  />
-                ) : (
-                  <KanbanView
-                    leads={filteredLeads}
-                    onUpdateLead={(id, c, v) =>
-                      updateDoc(doc(db, "leads", id), { [c]: v })
-                    }
-                    onEditLead={(l) => {
-                      setLeadToEdit(l);
-                      setIsModalOpen(true);
-                    }}
-                    onFollowUp={(l) => {
-                      setLeadToFollow(l);
-                      setIsFollowUpOpen(true);
-                    }}
-                    onFinalize={(l) =>
-                      setFinalizeModal({
-                        open: true,
-                        lead: l,
-                        fechaInicio: "",
-                        fechaFin: "",
-                      })
-                    }
-                  />
-                )}
+                <LeadTable
+                  leads={filteredLeads}
+                  onUpdateLead={(id, c, v) =>
+                    updateDoc(doc(db, "leads", id), { [c]: v })
+                  }
+                  onEditLead={(l) => {
+                    setLeadToEdit(l);
+                    setIsModalOpen(true);
+                  }}
+                  onFollowUp={(l) => {
+                    setLeadToFollow(l);
+                    setIsFollowUpOpen(true);
+                  }}
+                  onDeleteLead={(id) =>
+                    window.confirm("¿Eliminar?") &&
+                    deleteDoc(doc(db, "leads", id))
+                  }
+                  onFinalize={(l) =>
+                    setFinalizeModal({
+                      open: true,
+                      lead: l,
+                      fechaInicio: "",
+                      fechaFin: "",
+                    })
+                  }
+                  onViewComment={(text, author) =>
+                    setCommentModal({ open: true, text, author })
+                  }
+                  onManageLead={(l) => setManageModal({ open: true, lead: l })}
+                />
               </div>
             </div>
           )}
+
+          {/* OTRAS VISTAS */}
           {activeTab === "agenda-clm" && (
             <AgendaView
               leads={leadsCLM}
@@ -271,15 +252,18 @@ export default function CrmDashboard() {
             />
           )}
           {activeTab === "reportes-clm" && <ReportsView leads={leadsCLM} />}
+          {activeTab === "admin-usuarios" && <AdminUsersView />}
         </div>
       </main>
 
       {/* --- ZONA DE MODALES --- */}
 
+      {/* 1. Modal de Exportar */}
       {isExportOpen && (
         <ExportModal leads={leadsCLM} onClose={() => setIsExportOpen(false)} />
       )}
 
+      {/* 2. Modal Formulario Nuevo/Editar */}
       {isModalOpen && (
         <LeadFormModal
           leads={leadsCLM}
@@ -292,6 +276,7 @@ export default function CrmDashboard() {
         />
       )}
 
+      {/* 3. Modal de Asistencias (Faltas) */}
       {isFollowUpOpen && (
         <FollowUpModal
           onClose={() => setIsFollowUpOpen(false)}
@@ -310,6 +295,7 @@ export default function CrmDashboard() {
         />
       )}
 
+      {/* 4. Modal de Comentarios (Visualizar Notas) */}
       {commentModal.open && (
         <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white w-full max-w-md rounded-[2rem] p-8 shadow-2xl border border-slate-100 relative">
@@ -346,6 +332,7 @@ export default function CrmDashboard() {
         </div>
       )}
 
+      {/* 5. Panel Alumno (Gestión Operativa) */}
       {manageModal.open && manageModal.lead && (
         <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white w-full max-w-[420px] rounded-[2rem] p-8 shadow-2xl border border-slate-100 relative overflow-hidden">
@@ -514,6 +501,7 @@ export default function CrmDashboard() {
         </div>
       )}
 
+      {/* 6. Modal de Finalizar Comisión */}
       {finalizeModal.open && (
         <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border border-slate-100">
