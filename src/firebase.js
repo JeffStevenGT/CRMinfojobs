@@ -1,21 +1,21 @@
+// src/firebase.js
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore"; // Para la base de datos
-import { getAuth } from "firebase/auth"; // Para el login
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAEkeEvi43cuUNvFAXBconeiYC-8RZms4I",
-  authDomain: "crm-mainjobs.firebaseapp.com",
-  projectId: "crm-mainjobs",
-  storageBucket: "crm-mainjobs.firebasestorage.app",
-  messagingSenderId: "873216383021",
-  appId: "1:873216383021:web:057b322656f2204ce4c0a4",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Inicializamos la App
+// Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 
-// Exportamos las herramientas para usarlas en el CRM
-export const db = getFirestore(app);
+// Exportar servicios
 export const auth = getAuth(app);
-
+export const db = getFirestore(app);
 export default app;

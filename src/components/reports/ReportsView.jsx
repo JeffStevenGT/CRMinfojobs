@@ -1,350 +1,239 @@
-import React, { useMemo } from "react";
+import React from "react";
 
-export default function ReportsView({ leads }) {
-  const { totalPuntos, totalFinalizados, pagosAgrupados, desgloseGlobal } =
-    useMemo(() => {
-      const finalizados = leads.filter(
-        (l) => l.status === "finalizado" && l.fechaFinClase,
-      );
+export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
+  const hoy = new Date().toISOString().split("T")[0];
 
-      let puntos = 0;
-      const pagosMes = {};
-      const global = {
-        CLM: { pts: 0, count: 0 },
-        Lideres: { pts: 0, count: 0 },
-        Sandetel: { pts: 0, count: 0 },
-        MasDigital: { pts: 0, count: 0 },
-      };
+  // --- 1. LÓGICA DE PUNTOS Y TRAMOS DE PAGO (SOLES) ---
+  const inscritos = leads.filter(
+    (l) => l.estado === "Inscrito" || l.status === "finalizado",
+  );
 
-      finalizados.forEach((lead) => {
-        const proj = lead.proyecto || "CLM";
-        let valorPunto = 1.5; // Por defecto CLM
+  // Suma de puntos según el proyecto
+  const totalPuntos = inscritos.reduce((acc, lead) => {
+    const p = lead.proyecto?.toUpperCase() || "";
+    if (p === "CLM") return acc + 2;
+    if (p === "MASDIGITAL") return acc + 1.5;
+    return acc + 1; // Lideres, Sandetel y otros
+  }, 0);
 
-        if (proj === "Sandetel") valorPunto = 1.0;
-        if (proj === "Lideres") valorPunto = 2.5;
-        // NUEVA REGLA MATEMÁTICA: 1 punto cada 6 alumnos (1/6 por alumno)
-        if (proj === "MasDigital") valorPunto = 1 / 6;
+  // DETERMINACIÓN DEL VALOR DEL PUNTO SEGÚN TUS TRAMOS EXACTOS
+  const obtenerValorPunto = (pts) => {
+    if (pts >= 28) return 75; // Tramo 6
+    if (pts >= 24) return 62.5; // Tramo 5
+    if (pts >= 20) return 50; // Tramo 4
+    if (pts >= 16) return 37.5; // Tramo 3
+    if (pts >= 12) return 25; // Tramo 2
+    if (pts >= 8) return 20; // Tramo 1
+    return 0; // Menos de 8 puntos aún no comisiona o tramo base
+  };
 
-        puntos += valorPunto;
+  const valorActualPunto = obtenerValorPunto(totalPuntos);
+  const pagoTotalSoles = totalPuntos * valorActualPunto;
 
-        if (global[proj]) {
-          global[proj].pts += valorPunto;
-          global[proj].count += 1;
-        }
+  // --- 2. FILTROS OPERATIVOS ---
+  const llamadasHoy = leads.filter(
+    (l) =>
+      (l.estado === "Agendado" || l.estado === "Interesado") &&
+      l.fechaLlamada?.startsWith(hoy),
+  );
 
-        const finDate = new Date(lead.fechaFinClase);
-        const year = finDate.getFullYear();
-        const month = finDate.getMonth();
+  const tramitesPendientes = leads.filter(
+    (l) => l.estado === "Registrado" && (!l.doc1 || !l.doc2),
+  );
 
-        const paymentYear = month === 11 ? year + 1 : year;
-        const paymentMonth = month === 11 ? 0 : month + 1;
+  const riesgoAbandono = leads.filter((l) => {
+    if (l.estado !== "Inscrito" || l.status !== "en curso") return false;
+    const faltas = 20 - (l.asistencia || []).filter((d) => d).length;
+    return faltas >= 2;
+  });
 
-        const fechaPagoObj = new Date(paymentYear, paymentMonth + 1, 0);
-        const mesNombres = [
-          "Enero",
-          "Febrero",
-          "Marzo",
-          "Abril",
-          "Mayo",
-          "Junio",
-          "Julio",
-          "Agosto",
-          "Septiembre",
-          "Octubre",
-          "Noviembre",
-          "Diciembre",
-        ];
-        const key = `${paymentYear}-${String(paymentMonth + 1).padStart(2, "0")}`;
+  const handleWhatsApp = (phone) => {
+    if (phone)
+      window.open(`https://wa.me/34${phone.replace(/\D/g, "")}`, "_blank");
+  };
 
-        if (!pagosMes[key]) {
-          pagosMes[key] = {
-            id: key,
-            mesTexto: `${mesNombres[paymentMonth]} ${paymentYear}`,
-            fechaPagoRaw: fechaPagoObj,
-            fechaPagoAprox: fechaPagoObj.toLocaleDateString("es-ES", {
-              day: "2-digit",
-              month: "long",
-              year: "numeric",
-            }),
-            totalPuntos: 0,
-            totalAlumnos: 0,
-            desglose: {
-              CLM: { pts: 0, count: 0 },
-              Lideres: { pts: 0, count: 0 },
-              Sandetel: { pts: 0, count: 0 },
-              MasDigital: { pts: 0, count: 0 },
-            },
-          };
-        }
+  // --- 3. COMPONENTE DE TARJETA ---
+  const AgendaCard = ({ lead, tipo }) => {
+    const proj = lead.proyecto || "CLM";
+    const faltas = 20 - (lead.asistencia || []).filter((d) => d).length;
 
-        pagosMes[key].totalPuntos += valorPunto;
-        pagosMes[key].totalAlumnos += 1;
-        if (pagosMes[key].desglose[proj]) {
-          pagosMes[key].desglose[proj].pts += valorPunto;
-          pagosMes[key].desglose[proj].count += 1;
-        }
-      });
+    const getProyectoColor = (proyecto) => {
+      const p = proyecto?.toUpperCase();
+      if (p === "CLM") return "text-indigo-500";
+      if (p === "LIDERES") return "text-amber-500";
+      if (p === "SANDETEL") return "text-cyan-500";
+      if (p === "MASDIGITAL") return "text-fuchsia-500";
+      return "text-slate-400";
+    };
 
-      const pagosArray = Object.values(pagosMes).sort(
-        (a, b) => a.fechaPagoRaw - b.fechaPagoRaw,
-      );
+    return (
+      <div className="bg-white/70 p-4 rounded-[2rem] border border-slate-100/50 mb-3 group hover:shadow-md transition-all duration-300 animate-in fade-in slide-in-from-bottom-2">
+        <div className="flex justify-between items-start mb-2">
+          <div className="min-w-0 flex-1 leading-tight">
+            <h4 className="font-bold text-[11px] text-slate-700 uppercase truncate">
+              {lead.nombre}
+            </h4>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span
+                className={`text-[7.5px] font-black uppercase tracking-widest ${getProyectoColor(proj)}`}
+              >
+                {proj}
+              </span>
+              <span className="text-slate-300 text-[6px]">•</span>
+              <span className="text-[7.5px] font-bold text-slate-400 uppercase">
+                {lead.temperatura || "Frío"}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => handleWhatsApp(lead.whatsapp)}
+            className="text-emerald-500 hover:scale-110 transition-transform p-1"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.305-.885-.653-1.48-1.459-1.653-1.756-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+            </svg>
+          </button>
+        </div>
 
-      return {
-        totalPuntos: puntos,
-        totalFinalizados: finalizados.length,
-        pagosAgrupados: pagosArray,
-        desgloseGlobal: global,
-      };
-    }, [leads]);
+        <div className="pt-2 border-t border-slate-50 flex items-center justify-between">
+          {tipo === "llamada" && (
+            <span className="text-[8.5px] font-black text-indigo-500 uppercase bg-indigo-50 px-2 py-1 rounded-lg tracking-widest">
+              🕒 {lead.fechaLlamada?.split("T")[1]?.slice(0, 5) || "Pendiente"}
+            </span>
+          )}
+          {tipo === "tramite" && (
+            <div className="flex gap-1.5">
+              <div
+                className={`w-2 h-2 rounded-full ${lead.doc1 ? "bg-emerald-400" : "bg-slate-200 shadow-inner"}`}
+              ></div>
+              <div
+                className={`w-2 h-2 rounded-full ${lead.doc2 ? "bg-emerald-400" : "bg-slate-200 shadow-inner"}`}
+              ></div>
+            </div>
+          )}
+          {tipo === "riesgo" && (
+            <span className="text-[8.5px] font-black text-rose-500 uppercase bg-rose-50 px-2 py-1 rounded-lg tracking-widest animate-pulse">
+              ⚠️ {faltas} Faltas
+            </span>
+          )}
+          <button
+            onClick={() => onEditLead(lead)}
+            className="text-[8.5px] font-bold text-slate-400 hover:text-slate-700 uppercase transition-colors"
+          >
+            Ver Perfil →
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className="h-full flex flex-col gap-6 overflow-y-auto custom-scroll-y pb-20 animate-in fade-in duration-300">
-      <div className="flex flex-col gap-1 shrink-0 px-2">
-        <h2 className="text-xl font-black text-slate-800 uppercase italic leading-none">
-          Dashboard Financiero
-        </h2>
-        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
-          Proyección de Pagos y Rendimiento
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 px-2 shrink-0">
-        <div className="bg-slate-800 text-white p-5 rounded-[1.5rem] shadow-xl shadow-slate-200 flex flex-col relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10"></div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 z-10">
-            Total Generado
-          </span>
-          <span className="text-4xl font-black tracking-tighter z-10">
-            {totalPuntos.toFixed(1)}
-          </span>
-        </div>
-
-        <div className="bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[8.5px] font-black uppercase tracking-widest text-slate-400">
-              CLM (1.5 pts)
-            </span>
-            <span className="bg-indigo-50 text-indigo-500 text-[8px] font-black px-2 py-0.5 rounded-lg">
-              {desgloseGlobal.CLM.count} Alm.
-            </span>
+    <div className="flex flex-col h-full space-y-6 animate-in fade-in duration-700 pb-10">
+      {/* --- DASHBOARD DE COMISIONES (SOLES) --- */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-2 shrink-0">
+        <div className="bg-white p-5 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">
+              Puntos Acumulados
+            </p>
+            <h4 className="text-xl font-black text-slate-800">
+              {totalPuntos}{" "}
+              <span className="text-[10px] text-indigo-500 uppercase tracking-tighter">
+                pts
+              </span>
+            </h4>
           </div>
-          <span className="text-2xl font-black text-indigo-600">
-            {desgloseGlobal.CLM.pts.toFixed(1)}{" "}
-            <span className="text-[10px] text-slate-400">pts</span>
-          </span>
-        </div>
-
-        <div className="bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[8.5px] font-black uppercase tracking-widest text-slate-400">
-              Líderes (2.5 pts)
-            </span>
-            <span className="bg-amber-50 text-amber-500 text-[8px] font-black px-2 py-0.5 rounded-lg">
-              {desgloseGlobal.Lideres.count} Alm.
-            </span>
-          </div>
-          <span className="text-2xl font-black text-amber-500">
-            {desgloseGlobal.Lideres.pts.toFixed(1)}{" "}
-            <span className="text-[10px] text-slate-400">pts</span>
-          </span>
-        </div>
-
-        <div className="bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[8.5px] font-black uppercase tracking-widest text-slate-400">
-              Sandetel (1.0)
-            </span>
-            <span className="bg-cyan-50 text-cyan-500 text-[8px] font-black px-2 py-0.5 rounded-lg">
-              {desgloseGlobal.Sandetel.count} Alm.
-            </span>
-          </div>
-          <span className="text-2xl font-black text-cyan-500">
-            {desgloseGlobal.Sandetel.pts.toFixed(1)}{" "}
-            <span className="text-[10px] text-slate-400">pts</span>
-          </span>
-        </div>
-
-        <div className="bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            {/* ACTUALIZADO A 1/6 */}
-            <span className="text-[8.5px] font-black uppercase tracking-widest text-slate-400">
-              MasDig. (1/6)
-            </span>
-            <span className="bg-fuchsia-50 text-fuchsia-500 text-[8px] font-black px-2 py-0.5 rounded-lg">
-              {desgloseGlobal.MasDigital.count} Alm.
-            </span>
-          </div>
-          <span className="text-2xl font-black text-fuchsia-500">
-            {desgloseGlobal.MasDigital.pts.toFixed(1)}{" "}
-            <span className="text-[10px] text-slate-400">pts</span>
-          </span>
-        </div>
-      </div>
-
-      <div className="flex flex-col flex-1 bg-white rounded-[2rem] shadow-sm border border-slate-100 mx-2 p-6 overflow-hidden">
-        <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest mb-6">
-          Proyección de Pagos Mensuales
-        </h3>
-
-        {pagosAgrupados.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-slate-300">
-            <svg
-              className="w-16 h-16 mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <p className="text-[10px] font-black uppercase tracking-widest">
-              No hay alumnos finalizados aún.
+          <div className="text-right">
+            <p className="text-[8px] font-black text-slate-400 uppercase italic">
+              Valor del Punto
+            </p>
+            <p className="text-[11px] font-black text-indigo-600">
+              S/ {valorActualPunto}
             </p>
           </div>
-        ) : (
-          <div className="space-y-4 overflow-y-auto custom-scroll-y pr-2">
-            {pagosAgrupados.map((pago) => {
-              const pctCLM =
-                (pago.desglose.CLM.pts / pago.totalPuntos) * 100 || 0;
-              const pctLideres =
-                (pago.desglose.Lideres.pts / pago.totalPuntos) * 100 || 0;
-              const pctSandetel =
-                (pago.desglose.Sandetel.pts / pago.totalPuntos) * 100 || 0;
-              const pctMasDigital =
-                (pago.desglose.MasDigital.pts / pago.totalPuntos) * 100 || 0;
+        </div>
 
-              return (
-                <div
-                  key={pago.id}
-                  className="bg-slate-50 rounded-[1.5rem] p-5 border border-slate-100 flex flex-col xl:flex-row gap-6 items-center"
-                >
-                  <div className="w-full xl:w-1/3 flex flex-col">
-                    <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1 flex items-center gap-1.5">
-                      <svg
-                        className="w-3.5 h-3.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2.5}
-                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                      Día de pago: {pago.fechaPagoAprox}
-                    </span>
-                    <h4 className="text-lg font-black text-slate-800 uppercase leading-none mt-1">
-                      Corte {pago.mesTexto}
-                    </h4>
-                    <div className="flex items-center gap-2 mt-3">
-                      <div className="bg-white border border-slate-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm">
-                        <span className="text-[9px] font-black text-slate-400 uppercase">
-                          Puntos:
-                        </span>
-                        <span className="text-xs font-black text-slate-800">
-                          {pago.totalPuntos.toFixed(1)}
-                        </span>
-                      </div>
-                      <div className="bg-white border border-slate-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm">
-                        <span className="text-[9px] font-black text-slate-400 uppercase">
-                          Alumnos:
-                        </span>
-                        <span className="text-xs font-black text-slate-800">
-                          {pago.totalAlumnos}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="w-full xl:w-2/3 flex flex-col gap-3">
-                    <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden flex">
-                      {pctCLM > 0 && (
-                        <div
-                          style={{ width: `${pctCLM}%` }}
-                          className="h-full bg-indigo-500 transition-all duration-1000"
-                        ></div>
-                      )}
-                      {pctLideres > 0 && (
-                        <div
-                          style={{ width: `${pctLideres}%` }}
-                          className="h-full bg-amber-400 transition-all duration-1000"
-                        ></div>
-                      )}
-                      {pctSandetel > 0 && (
-                        <div
-                          style={{ width: `${pctSandetel}%` }}
-                          className="h-full bg-cyan-500 transition-all duration-1000"
-                        ></div>
-                      )}
-                      {pctMasDigital > 0 && (
-                        <div
-                          style={{ width: `${pctMasDigital}%` }}
-                          className="h-full bg-fuchsia-500 transition-all duration-1000"
-                        ></div>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      <div className="bg-white p-2 rounded-xl border border-slate-100 flex flex-col shadow-sm">
-                        <div className="flex items-center gap-1 mb-1">
-                          <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
-                          <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider">
-                            CLM
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-black text-slate-700">
-                          {pago.desglose.CLM.pts.toFixed(1)} pts
-                        </span>
-                      </div>
-
-                      <div className="bg-white p-2 rounded-xl border border-slate-100 flex flex-col shadow-sm">
-                        <div className="flex items-center gap-1 mb-1">
-                          <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>
-                          <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider">
-                            Líderes
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-black text-slate-700">
-                          {pago.desglose.Lideres.pts.toFixed(1)} pts
-                        </span>
-                      </div>
-
-                      <div className="bg-white p-2 rounded-xl border border-slate-100 flex flex-col shadow-sm">
-                        <div className="flex items-center gap-1 mb-1">
-                          <div className="w-1.5 h-1.5 rounded-full bg-cyan-500"></div>
-                          <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider">
-                            Sandetel
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-black text-slate-700">
-                          {pago.desglose.Sandetel.pts.toFixed(1)} pts
-                        </span>
-                      </div>
-
-                      <div className="bg-white p-2 rounded-xl border border-slate-100 flex flex-col shadow-sm">
-                        <div className="flex items-center gap-1 mb-1">
-                          <div className="w-1.5 h-1.5 rounded-full bg-fuchsia-500"></div>
-                          <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider">
-                            MasDig.
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-black text-slate-700">
-                          {pago.desglose.MasDigital.pts.toFixed(1)} pts
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+        <div className="bg-slate-900 p-5 rounded-[2.5rem] shadow-xl flex items-center justify-between text-white">
+          <div>
+            <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">
+              Acumulado Total
+            </p>
+            <h4 className="text-2xl font-black text-emerald-400 tracking-tighter">
+              S/ {pagoTotalSoles.toLocaleString()}
+            </h4>
           </div>
-        )}
+          <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center text-xl">
+            💰
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">
+              Inscritos Totales
+            </p>
+            <h4 className="text-xl font-black text-slate-800">
+              {inscritos.length}
+            </h4>
+          </div>
+          <div className="w-10 h-10 bg-amber-50 rounded-2xl flex items-center justify-center text-lg">
+            🎓
+          </div>
+        </div>
+      </div>
+
+      {/* --- COLUMNAS OPERATIVAS --- */}
+      <div className="flex flex-col lg:flex-row gap-6 h-full items-start overflow-hidden">
+        <div className="flex-1 min-w-[300px] bg-slate-50/50 rounded-[2.5rem] p-6 flex flex-col h-full max-h-[72vh]">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500 mb-6 px-2">
+            Llamadas de Hoy
+          </h3>
+          <div className="flex-1 overflow-y-auto no-scrollbar">
+            {llamadasHoy.length > 0 ? (
+              llamadasHoy.map((l) => (
+                <AgendaCard key={l.id} lead={l} tipo="llamada" />
+              ))
+            ) : (
+              <p className="text-center text-[9px] font-bold text-slate-300 uppercase mt-10 tracking-widest">
+                Sin llamadas hoy
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex-1 min-w-[300px] bg-slate-50/50 rounded-[2.5rem] p-6 flex flex-col h-full max-h-[72vh]">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6 px-2">
+            Trámites de Inscripción
+          </h3>
+          <div className="flex-1 overflow-y-auto no-scrollbar">
+            {tramitesPendientes.length > 0 ? (
+              tramitesPendientes.map((l) => (
+                <AgendaCard key={l.id} lead={l} tipo="tramite" />
+              ))
+            ) : (
+              <p className="text-center text-[9px] font-bold text-slate-300 uppercase mt-10 tracking-widest">
+                Todo al día
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex-1 min-w-[300px] bg-slate-50/50 rounded-[2.5rem] p-6 flex flex-col h-full max-h-[72vh]">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-400 mb-6 px-2">
+            Riesgo de Abandono
+          </h3>
+          <div className="flex-1 overflow-y-auto no-scrollbar">
+            {riesgoAbandono.length > 0 ? (
+              riesgoAbandono.map((l) => (
+                <AgendaCard key={l.id} lead={l} tipo="riesgo" />
+              ))
+            ) : (
+              <p className="text-center text-[9px] font-bold text-slate-300 uppercase mt-10 tracking-widest">
+                Sin riesgos
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

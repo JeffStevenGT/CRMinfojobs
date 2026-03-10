@@ -1,106 +1,232 @@
 import React, { useState } from "react";
-import { auth } from "../../firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+  doc,
+} from "firebase/firestore"; // <-- Agregamos updateDoc y doc
+import { db } from "../../firebase";
 
-export default function Login() {
+export default function Login({ onLoginSuccess }) {
+  const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // --- FUNCIÓN DE AUTOCOMPLETADO RÁPIDO ---
-  const fillCredentials = () => {
-    setEmail("admin@mainjobs.com"); // Cámbialo por el que creaste en la consola
-    setPassword("12345678"); // Cámbialo por el que creaste en la consola
+  const auth = getAuth();
+
+  const checkWhitelist = async (emailToCheck) => {
+    const q = query(
+      collection(db, "usuarios_permitidos"),
+      where("email", "==", emailToCheck.toLowerCase().trim()),
+    );
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      return { isAllowed: false, rol: null, docId: null, nombreDB: null };
+    }
+
+    const userData = querySnapshot.docs[0].data();
+    // Retornamos también el ID del documento para poder actualizarlo luego
+    return {
+      isAllowed: true,
+      rol: userData.rol,
+      docId: querySnapshot.docs[0].id,
+      nombreDB: userData.nombre,
+    };
   };
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
+    setLoading(true);
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      if (isRegistering && !nombre.trim()) {
+        throw new Error("Por favor, ingresa tu nombre.");
+      }
+
+      const { isAllowed, rol, docId, nombreDB } = await checkWhitelist(email);
+
+      if (!isAllowed) {
+        throw new Error(
+          "ACCESO DENEGADO: Tu correo no está autorizado por el Administrador.",
+        );
+      }
+
+      let userCredential;
+      let finalName = nombre;
+
+      if (isRegistering) {
+        // 1. Crear cuenta en Firebase Auth
+        userCredential = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password,
+        );
+        await updateProfile(userCredential.user, { displayName: nombre });
+
+        // 2. LA MAGIA: Guardar el nombre en Firestore para que sea permanente
+        await updateDoc(doc(db, "usuarios_permitidos", docId), {
+          nombre: nombre,
+        });
+      } else {
+        // Iniciar sesión
+        userCredential = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password,
+        );
+        // Si ya tenía nombre en Firestore, lo usamos; si no, "Usuario"
+        finalName = userCredential.user.displayName || nombreDB || "Usuario";
+      }
+
+      onLoginSuccess(userCredential.user, rol, finalName);
     } catch (err) {
-      setError("Credenciales inválidas. Revisa e intenta de nuevo.");
+      console.error(err);
+      if (
+        err.code === "auth/wrong-password" ||
+        err.code === "auth/user-not-found" ||
+        err.code === "auth/invalid-credential"
+      ) {
+        setError("Correo o contraseña incorrectos.");
+      } else if (err.code === "auth/email-already-in-use") {
+        setError("Este correo ya está registrado. Intenta Iniciar Sesión.");
+      } else if (err.code === "auth/weak-password") {
+        setError("La contraseña debe tener al menos 6 caracteres.");
+      } else {
+        setError(err.message || "Ocurrió un error al autenticar.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 font-sans">
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
-        <div className="bg-[#4F46E5] p-8 text-center text-white">
-          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/30 backdrop-blur-md">
-            <span className="text-xl font-black italic">CT</span>
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-indigo-600/20 rounded-full blur-[100px]"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-emerald-600/10 rounded-full blur-[100px]"></div>
+
+      <div className="bg-white w-full max-w-md rounded-[2.5rem] p-8 md:p-10 shadow-2xl relative z-10 animate-in slide-in-from-bottom-4 duration-700">
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-3xl font-black shadow-lg shadow-indigo-600/30 mb-4 transform -rotate-6 hover:rotate-0 transition-transform duration-300">
+            J
           </div>
-          <h1 className="text-lg font-black uppercase tracking-[0.2em]">
-            Infojobs CRM
+          <h1 className="text-2xl font-black text-slate-800 tracking-tighter uppercase">
+            JEFF CRM
           </h1>
-          <p className="text-indigo-100 text-[10px] font-bold uppercase mt-2 opacity-80 tracking-widest">
-            Acceso Restringido
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+            Plataforma Operativa
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className="p-8 space-y-5">
-          {error && (
-            <div className="bg-red-50 border border-red-100 p-3 rounded-xl flex items-center gap-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-              <p className="text-[10px] text-red-600 font-bold uppercase">
-                {error}
-              </p>
+        {error && (
+          <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-3 animate-in fade-in">
+            <svg
+              className="w-5 h-5 text-rose-500 shrink-0 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <p className="text-[10px] font-black text-rose-600 uppercase tracking-wide leading-snug">
+              {error}
+            </p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {isRegistering && (
+            <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2">
+              <label className="text-[9px] font-black text-slate-400 uppercase ml-1 tracking-widest">
+                Tu Nombre
+              </label>
+              <input
+                type="text"
+                required
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                className="w-full p-3.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-300"
+                placeholder="Ej. Carlos Mendoza"
+              />
             </div>
           )}
 
           <div className="space-y-1.5">
-            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">
-              Email
+            <label className="text-[9px] font-black text-slate-400 uppercase ml-1 tracking-widest">
+              Correo Electrónico
             </label>
             <input
-              required
               type="email"
+              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all outline-none"
-              placeholder="correo@ejemplo.com"
+              className="w-full p-3.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-300"
+              placeholder="tu@correo.com"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">
+            <label className="text-[9px] font-black text-slate-400 uppercase ml-1 tracking-widest">
               Contraseña
             </label>
             <input
-              required
               type="password"
+              required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all outline-none"
+              className="w-full p-3.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-300"
               placeholder="••••••••"
             />
           </div>
 
           <button
-            disabled={loading}
             type="submit"
-            className="w-full bg-[#4F46E5] text-white py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-indigo-100 active:scale-[0.98] transition-all disabled:opacity-50"
+            disabled={loading}
+            className="w-full bg-slate-900 text-white py-4 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 hover:bg-slate-800 active:scale-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed mt-2 flex justify-center items-center gap-2"
           >
-            {loading ? "Verificando..." : "Entrar al Sistema"}
+            {loading ? (
+              <span className="animate-pulse">Verificando acceso...</span>
+            ) : isRegistering ? (
+              "Crear Cuenta y Entrar"
+            ) : (
+              "Iniciar Sesión"
+            )}
           </button>
         </form>
 
-        {/* BOTÓN DE ACCESO RÁPIDO - Solo para desarrollo */}
-        <div className="px-8 pb-8 text-center">
+        <div className="mt-8 text-center border-t border-slate-100 pt-6">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+            {isRegistering
+              ? "¿Ya tienes tu cuenta configurada?"
+              : "¿Es tu primera vez entrando al CRM?"}
+          </p>
           <button
             type="button"
-            onClick={fillCredentials}
-            className="text-[9px] font-black text-indigo-500 uppercase tracking-widest hover:text-indigo-700 transition-colors border-b border-indigo-100 pb-0.5"
+            onClick={() => {
+              setIsRegistering(!isRegistering);
+              setError("");
+            }}
+            className="mt-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:text-indigo-800 transition-colors"
           >
-            ⚡ Usar credenciales de Demo
+            {isRegistering ? "Iniciar Sesión" : "Crear mi cuenta"}
           </button>
-          <p className="text-[8px] text-gray-300 font-bold uppercase tracking-widest mt-6">
-            Sincronizado con Firebase Auth
-          </p>
         </div>
       </div>
     </div>

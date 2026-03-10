@@ -8,6 +8,7 @@ export default function Sidebar({
   onExportClick,
   onLogout,
   isAdmin,
+  userName, // <-- Este es el nombre que viene desde App -> Dashboard
 }) {
   const menuItems = [
     { id: "clientes-clm", label: "DIRECTORIO", icon: "📋" },
@@ -18,25 +19,30 @@ export default function Sidebar({
       : []),
   ];
 
+  // Lógica ultra-segura para el nombre:
+  // Si userName existe, saca la primera palabra. Si no, usa "Usuario"
+  const nombreAMostrar = userName ? userName.split(" ")[0] : "Usuario";
+  const letraInicial = nombreAMostrar.charAt(0).toUpperCase();
+
   return (
     <aside
       className={`bg-slate-900 border-r border-slate-800 transition-all duration-300 ease-in-out flex flex-col z-[110] shadow-2xl ${isOpen ? "w-64" : "w-20"}`}
     >
-      {/* --- CABECERA (LOGO + ESTADO MINIMALISTA) --- */}
       <div className="p-6 flex items-center justify-between">
         {isOpen && (
           <div className="flex items-center gap-3 animate-in fade-in duration-500">
             <div className="w-8 h-8 bg-indigo-500 rounded-xl flex items-center justify-center text-white font-black shadow-lg shadow-indigo-500/40 shrink-0">
-              J
+              {letraInicial}
             </div>
             <div className="flex flex-col justify-center">
+              {/* AQUÍ ESTÁ EL CAMBIO: Usamos nombreAMostrar directamente */}
               <span className="text-xs font-black text-white tracking-tighter uppercase leading-none mb-1.5">
-                JEFF CRM
+                {nombreAMostrar}
               </span>
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"></div>
                 <span className="text-[7.5px] font-bold text-slate-400 uppercase tracking-widest leading-none">
-                  {isAdmin ? "Admin" : "Usuario"}
+                  {isAdmin ? "Admin" : "Asesor"}
                 </span>
               </div>
             </div>
@@ -101,7 +107,6 @@ export default function Sidebar({
         </button>
       </nav>
 
-      {/* --- ZONA INFERIOR: SOLO CERRAR SESIÓN --- */}
       <div className="p-4 mt-auto">
         <button
           onClick={onLogout}

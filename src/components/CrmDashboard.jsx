@@ -17,9 +17,11 @@ import {
   updateDoc,
   doc,
   deleteDoc,
+  query,
+  where,
 } from "firebase/firestore";
 
-export default function CrmDashboard() {
+export default function CrmDashboard({ userRole, userEmail, userName }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("clientes-clm");
   const [leadsCLM, setLeadsCLM] = useState([]);
@@ -32,7 +34,6 @@ export default function CrmDashboard() {
   const [leadToEdit, setLeadToEdit] = useState(null);
   const [leadToFollow, setLeadToFollow] = useState(null);
 
-  // Estados para los modales operativos
   const [commentModal, setCommentModal] = useState({
     open: false,
     text: "",
@@ -52,15 +53,25 @@ export default function CrmDashboard() {
     type: "success",
   });
 
-  // ⚠️ TEMPORAL: Para que veas el panel de Usuarios. Luego esto vendrá de tu Login.
-  const isAdmin = true;
+  const isAdmin = userRole === "admin";
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "leads"), (snapshot) => {
+    // EL GUARDIA DE DATOS: Define qué puede ver cada quien
+    let consulta;
+    if (isAdmin) {
+      consulta = collection(db, "leads"); // El Admin ve toda la base de datos
+    } else {
+      consulta = query(
+        collection(db, "leads"),
+        where("createdBy", "==", userEmail),
+      ); // El empleado solo ve sus propios leads
+    }
+
+    const unsubscribe = onSnapshot(consulta, (snapshot) => {
       setLeadsCLM(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
     return () => unsubscribe();
-  }, []);
+  }, [isAdmin, userEmail]);
 
   const notify = (msg, type = "success") => {
     setToast({ show: true, message: msg, type });
@@ -100,6 +111,7 @@ export default function CrmDashboard() {
           regalo: false,
           respondioWpp: false,
           fechaCreacion: new Date().toISOString(),
+          createdBy: userEmail, // Etiqueta invisible de quién lo creó
         });
         notify(`Registrado en ${data.proyecto}`);
       }
@@ -158,6 +170,7 @@ export default function CrmDashboard() {
         onExportClick={() => setIsExportOpen(true)}
         onLogout={handleLogout}
         isAdmin={isAdmin}
+        userName={userName}
       />
 
       <main className="flex-1 flex flex-col min-w-0 bg-[#F9FAFB] h-full overflow-hidden">
@@ -169,8 +182,9 @@ export default function CrmDashboard() {
             <div className="max-w-full mx-auto space-y-4 h-full flex flex-col w-full">
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 px-2 shrink-0">
                 <div className="space-y-0.5">
+                  {/* Título Dinámico con el nombre del usuario */}
                   <h1 className="text-2xl font-black text-slate-800 uppercase italic">
-                    Control Jeff
+                    Control {userName ? userName.split(" ")[0] : "Operativo"}
                   </h1>
                   <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">
                     Panel Estratégico Multicampaña
@@ -258,12 +272,10 @@ export default function CrmDashboard() {
 
       {/* --- ZONA DE MODALES --- */}
 
-      {/* 1. Modal de Exportar */}
       {isExportOpen && (
         <ExportModal leads={leadsCLM} onClose={() => setIsExportOpen(false)} />
       )}
 
-      {/* 2. Modal Formulario Nuevo/Editar */}
       {isModalOpen && (
         <LeadFormModal
           leads={leadsCLM}
@@ -276,7 +288,6 @@ export default function CrmDashboard() {
         />
       )}
 
-      {/* 3. Modal de Asistencias (Faltas) */}
       {isFollowUpOpen && (
         <FollowUpModal
           onClose={() => setIsFollowUpOpen(false)}
@@ -295,7 +306,6 @@ export default function CrmDashboard() {
         />
       )}
 
-      {/* 4. Modal de Comentarios (Visualizar Notas) */}
       {commentModal.open && (
         <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white w-full max-w-md rounded-[2rem] p-8 shadow-2xl border border-slate-100 relative">
@@ -332,12 +342,10 @@ export default function CrmDashboard() {
         </div>
       )}
 
-      {/* 5. Panel Alumno (Gestión Operativa) */}
       {manageModal.open && manageModal.lead && (
         <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white w-full max-w-[420px] rounded-[2rem] p-8 shadow-2xl border border-slate-100 relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500"></div>
-
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest leading-none">
@@ -501,7 +509,6 @@ export default function CrmDashboard() {
         </div>
       )}
 
-      {/* 6. Modal de Finalizar Comisión */}
       {finalizeModal.open && (
         <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border border-slate-100">

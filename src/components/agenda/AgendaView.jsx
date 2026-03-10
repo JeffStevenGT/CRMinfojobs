@@ -3,6 +3,7 @@ import React from "react";
 export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
   const hoy = new Date().toISOString().split("T")[0];
 
+  // --- LÓGICA DE FILTRADO ---
   const llamadasHoy = leads.filter(
     (l) =>
       (l.estado === "Agendado" || l.estado === "Interesado") &&
@@ -10,7 +11,6 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
       l.fechaLlamada.startsWith(hoy),
   );
 
-  // LÓGICA CORREGIDA: Solo avisa de documentos faltantes. No avisa de accesos.
   const tramitesPendientes = leads.filter(
     (l) => l.estado === "Registrado" && (!l.doc1 || !l.doc2),
   );
@@ -26,19 +26,33 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
       window.open(`https://wa.me/34${phone.replace(/\D/g, "")}`, "_blank");
   };
 
+  // --- SUB-COMPONENTE DE TARJETA ---
   const AgendaCard = ({ lead, tipo }) => {
     const proj = lead.proyecto || "CLM";
     const faltas = 20 - (lead.asistencia || []).filter((d) => d).length;
 
+    // Colores dinámicos por proyecto
+    const getProyectoColor = (proyecto) => {
+      const p = proyecto?.toUpperCase();
+      if (p === "CLM") return "text-indigo-500";
+      if (p === "LIDERES") return "text-amber-500";
+      if (p === "SANDETEL") return "text-cyan-500";
+      if (p === "MASDIGITAL") return "text-fuchsia-500";
+      return "text-slate-400";
+    };
+
     return (
-      <div className="bg-white p-3 rounded-xl shadow-sm border-l-[3px] border-l-slate-300 mb-2.5 relative overflow-hidden group hover:shadow-md transition-all">
+      <div className="bg-white p-3 rounded-xl shadow-sm border-l-[3px] border-l-slate-200 mb-2.5 relative overflow-hidden group hover:shadow-md transition-all animate-in fade-in slide-in-from-bottom-1">
         <div className="flex justify-between items-start mb-2">
           <div className="min-w-0 flex-1 leading-tight">
             <h4 className="font-black text-[10.5px] text-slate-800 uppercase truncate">
               {lead.nombre}
             </h4>
             <div className="flex items-center gap-1 mt-0.5">
-              <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">
+              {/* Aquí aplicamos el color dinámico que pediste */}
+              <span
+                className={`text-[7px] font-black uppercase tracking-widest ${getProyectoColor(proj)}`}
+              >
                 {proj}
               </span>
               <span className="text-slate-300 text-[6px]">•</span>
@@ -108,9 +122,11 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
     );
   };
 
+  // --- RENDERIZADO PRINCIPAL ---
   return (
-    <div className="flex gap-4 h-full items-start pb-6 animate-in fade-in duration-300">
-      <div className="flex-shrink-0 w-[260px] flex flex-col h-full">
+    <div className="flex flex-col lg:flex-row gap-4 h-full items-start pb-6 animate-in fade-in duration-500">
+      {/* Columna Llamadas */}
+      <div className="flex-shrink-0 w-full lg:w-[280px] flex flex-col h-full max-h-[80vh]">
         <div className="px-3 py-2 rounded-xl border shadow-sm mb-3 flex justify-between items-center bg-indigo-50 border-indigo-100 text-indigo-800 shrink-0">
           <h3 className="text-[8.5px] font-black uppercase tracking-widest">
             📞 Llamadas del Día
@@ -126,7 +142,8 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
         </div>
       </div>
 
-      <div className="flex-shrink-0 w-[260px] flex flex-col h-full">
+      {/* Columna Trámites */}
+      <div className="flex-shrink-0 w-full lg:w-[280px] flex flex-col h-full max-h-[80vh]">
         <div className="px-3 py-2 rounded-xl border shadow-sm mb-3 flex justify-between items-center bg-purple-50 border-purple-100 text-purple-800 shrink-0">
           <h3 className="text-[8.5px] font-black uppercase tracking-widest">
             ⏳ Trámites Pendientes
@@ -142,7 +159,8 @@ export default function AgendaView({ leads, onUpdateLead, onEditLead }) {
         </div>
       </div>
 
-      <div className="flex-shrink-0 w-[260px] flex flex-col h-full">
+      {/* Columna Riesgo */}
+      <div className="flex-shrink-0 w-full lg:w-[280px] flex flex-col h-full max-h-[80vh]">
         <div className="px-3 py-2 rounded-xl border shadow-sm mb-3 flex justify-between items-center bg-rose-50 border-rose-100 text-rose-800 shrink-0">
           <h3 className="text-[8.5px] font-black uppercase tracking-widest">
             🚨 Riesgo de Abandono
